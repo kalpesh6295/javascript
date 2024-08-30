@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Hashtag Generator</title>
+    <style>
+        #hashtagWidget {
+            font-family: 'Arial', sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 20px auto;
+        }
+        #platformSelect, #keywordInput, #hashtagCount {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #hashtagCount {
+            -webkit-appearance: none;  /* Override default CSS styles */
+            appearance: none;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        #hashtagCount:hover {
+            opacity: 1;
+        }
+        #hashtagCount::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            background: #007BFF;
+            cursor: pointer;
+        }
+        #generateBtn {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #generateBtn:hover {
+            background-color: #0056b3;
+        }
+        #hashtagsDisplay {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .hashtag {
+            background: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+<div id="hashtagWidget">
+    <select id="platformSelect">
+        <option value="instagram">Instagram</option>
+        <option value="twitter">Twitter</option>
+        <option value="facebook">Facebook</option>
+        <option value="linkedin">LinkedIn</option>
+    </select>
+    <input type="range" min="1" max="10" value="5" id="hashtagCount" oninput="this.nextElementSibling.value = this.value">
+    <output>5</output>
+    <input type="text" id="keywordInput" placeholder="Enter keywords separated by commas...">
+    <button id="generateBtn">Generate Hashtags</button>
+    <div id="hashtagsDisplay"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    const platformTags = {
+        'instagram': ['#instagood', '#photooftheday', '#fashion', '#beautiful', '#happy'],
+        'twitter': ['#trending', '#NowTrending', '#TwitterMoments', '#FollowFriday', '#ThrowbackThursday'],
+        'facebook': ['#trending', '#lifeevent', '#fbf', '#tbt', '#community'],
+        'linkedin': ['#career', '#networking', '#business', '#innovation', '#leadership']
+    };
+
+    $('#generateBtn').on('click', function() {
+        let platform = $('#platformSelect').val();
+        let keywords = $('#keywordInput').val().split(',').map(k => k.trim());
+        let count = parseInt($('#hashtagCount').val(), 10);
+        let hashtags = [];
+        let currentTags = platformTags[platform] || platformTags['instagram'];
+
+        keywords.forEach(keyword => {
+            if(keyword) {
+                hashtags.push('#' + keyword.replace(/\s+/g, ''));
+                currentTags.forEach(tag => {
+                    if (hashtags.length < count && (tag.toLowerCase().includes(keyword.toLowerCase()) || Math.random() < 0.3)) {
+                        hashtags.push(tag + keyword.replace(/\s+/g, ''));
+                    }
+                });
+            }
+        });
+
+        // Ensure we have at least the number of hashtags requested, fill with random picks if necessary
+        while (hashtags.length < count && currentTags.length > 0) {
+            let randomTag = currentTags[Math.floor(Math.random() * currentTags.length)];
+            if (!hashtags.includes(randomTag)) {
+                hashtags.push(randomTag);
+            }
+        }
+
+        // Display hashtags
+        $('#hashtagsDisplay').html(hashtags.slice(0, count).map(tag => `<span class="hashtag">${tag}</span>`).join(''));
+    });
+});
+</script>
+
+</body>
+</html>

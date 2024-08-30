@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform-Specific Hashtag Generator</title>
+    <style>
+        /* Existing styles with slight modifications for dropdown integration */
+        #platformSelect {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        /* Other styles remain the same */
+    </style>
+</head>
+<body>
+
+<div id="hashtagWidget">
+    <select id="platformSelect">
+        <option value="instagram">Instagram</option>
+        <option value="facebook">Facebook</option>
+        <option value="twitter">Twitter</option>
+        <option value="linkedin">LinkedIn</option>
+    </select>
+    <input type="text" id="keywordInput" placeholder="Enter keywords separated by commas...">
+    <button id="generateBtn">Generate Hashtags</button>
+    <div id="hashtagsDisplay"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    const platformTrends = {
+        instagram: ['#instagood', '#photooftheday', '#fashion', '#beautiful'],
+        facebook: ['#fb', '#lifeevent', '#familytime', '#tbt'],
+        twitter: ['#trending', '#news', '#bitcoin', '#followfriday'],
+        linkedin: ['#career', '#networking', '#business', '#jobsearch']
+    };
+
+    $('#generateBtn').on('click', function() {
+        let platform = $('#platformSelect').val();
+        let keywords = $('#keywordInput').val().split(',').map(k => k.trim());
+        let hashtags = [];
+
+        keywords.forEach(keyword => {
+            if(keyword) {
+                hashtags.push('#' + keyword.replace(/\s/g, ''));
+                if(platformTrends[platform]) {
+                    platformTrends[platform].forEach(trend => {
+                        if (trend.includes(keyword.toLowerCase()) || Math.random() < 0.3) { 
+                            hashtags.push(trend.replace('#', '') + keyword.replace(/\s/g, ''));
+                        }
+                    });
+                }
+            }
+        });
+
+        $('#hashtagsDisplay').html(hashtags.slice(0, 20).map(tag => `<span class="hashtag">${tag}</span>`).join(''));
+    });
+});
+</script>
+
+</body>
+</html>
