@@ -1,241 +1,139 @@
-<!DOCT<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Custom Hashtag Generator</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Race Results</title>
     <style>
-      #hashtagWidget {
-        font-family: 'Arial', sans-serif;
-        background: #f4f4f4;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        max-width: 500px;
-        margin: 20px auto;
-      }
-      #platformSelect,
-      #keywordInput {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        box-sizing: border-box;
-      }
-      #sliderContainer {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-      #hashtagCount {
-        flex: 1;
-        margin-right: 15px;
-        -webkit-appearance: none;
-        appearance: none;
-        background: #d3d3d3;
-        border-radius: 4px;
-        height: 8px;
-        outline: none;
-        opacity: 0.8;
-        transition: opacity 0.2s;
-      }
-      #hashtagCount:hover {
-        opacity: 1;
-      }
-      #hashtagCount::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        background: #007bff;
-        border-radius: 50%;
-        cursor: pointer;
-      }
-      #hashtagCount::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        background: #007bff;
-        border-radius: 50%;
-        cursor: pointer;
-      }
-      #countOutput {
-        width: 40px;
-        text-align: center;
-        font-size: 1.2em;
-        color: #007bff;
-      }
-      #generateBtn {
-        width: 100%;
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      #generateBtn:hover {
-        background-color: #0056b3;
-      }
-      #hashtagsDisplay {
-        margin-top: 20px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-      }
-      .hashtag {
-        background: #e0e0e0;
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 0.9em;
-      }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        #raceResultsWidget {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        #addParticipantForm {
+            display: flex;
+            gap: 10px;
+        }
+        #addParticipantForm input[type="text"], 
+        #addParticipantForm input[type="number"], 
+        #addParticipantForm button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        #addParticipantForm button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #addParticipantForm button:hover {
+            background-color: #0056b3;
+        }
     </style>
-  </head>
-  <body>
-    <div id="hashtagWidget">
-      <select id="platformSelect">
-        <option value="instagram">Instagram</option>
-        <option value="twitter">Twitter</option>
-        <option value="facebook">Facebook</option>
-        <option value="linkedin">LinkedIn</option>
-      </select>
-      <div id="sliderContainer">
-        <input
-          type="range"
-          min="1"
-          max="10"
-          value="5"
-          id="hashtagCount"
-          oninput="this.nextElementSibling.value = this.value"
-        />
-        <output id="countOutput">5</output>
-      </div>
-      <input
-        type="text"
-        id="keywordInput"
-        placeholder="Enter keywords separated by commas..."
-      />
-      <button id="generateBtn">Generate Hashtags</button>
-      <div id="hashtagsDisplay"></div>
-    </div>
+</head>
+<body>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-      $(document).ready(function () {
-        const platformTags = {
-          instagram: [
-            '#instagood',
-            '#photooftheday',
-            '#fashion',
-            '#beautiful',
-            '#happy',
-            '#like4like',
-            '#followme',
-            '#picoftheday',
-            '#art',
-            '#love',
-            '#nature',
-            '#travel',
-            '#style',
-            '#summer',
-            '#fitness',
-          ],
-          twitter: [
-            '#trending',
-            '#NowTrending',
-            '#TwitterMoments',
-            '#FollowFriday',
-            '#ThrowbackThursday',
-            '#FridayFeeling',
-            '#MondayMotivation',
-            '#WednesdayWisdom',
-            '#News',
-            '#Breaking',
-            '#Sports',
-            '#Politics',
-            '#Tech',
-            '#Entertainment',
-            '#Startups',
-          ],
-          facebook: [
-            '#trending',
-            '#lifeevent',
-            '#fbf',
-            '#tbt',
-            '#community',
-            '#family',
-            '#friends',
-            '#social',
-            '#love',
-            '#motivation',
-            '#inspiration',
-            '#success',
-            '#business',
-            '#fun',
-            '#happiness',
-          ],
-          linkedin: [
-            '#career',
-            '#networking',
-            '#business',
-            '#innovation',
-            '#leadership',
-            '#entrepreneurship',
-            '#jobsearch',
-            '#worklife',
-            '#growth',
-            '#management',
-            '#technology',
-            '#futureofwork',
-            '#marketing',
-            '#strategy',
-            '#skills',
-          ],
-        };
+<div id="raceResultsWidget">
+    <h1>Virtual Race Results</h1>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Participant</th>
+                <th>Time (minutes)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Participant rows will be inserted here -->
+        </tbody>
+    </table>
+    
+    <form id="addParticipantForm">
+        <input type="text" id="participantName" placeholder="Participant Name" required>
+        <input type="number" id="participantTime" placeholder="Time (minutes)" required min="0">
+        <button type="submit">Add Participant</button>
+    </form>
+</div>
 
-        $('#generateBtn').on('click', function () {
-          let platform = $('#platformSelect').val();
-          let keywords = $('#keywordInput')
-            .val()
-            .split(',')
-            .map((k) => k.trim());
-          let count = parseInt($('#hashtagCount').val(), 10);
-          let hashtags = [];
-          let currentTags = platformTags[platform] || platformTags['instagram'];
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const participants = [];
 
-          keywords.forEach((keyword) => {
-            if (keyword) {
-              hashtags.push('#' + keyword.replace(/\s+/g, ''));
-              currentTags.forEach((tag) => {
-                if (
-                  hashtags.length < count &&
-                  (tag.toLowerCase().includes(keyword.toLowerCase()) ||
-                    Math.random() < 0.3)
-                ) {
-                  hashtags.push(tag + keyword.replace(/\s+/g, ''));
-                }
-              });
+        const addParticipantForm = document.getElementById('addParticipantForm');
+        const participantNameInput = document.getElementById('participantName');
+        const participantTimeInput = document.getElementById('participantTime');
+        const resultsTableBody = document.getElementById('resultsTable').querySelector('tbody');
+
+        addParticipantForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = participantNameInput.value.trim();
+            const time = parseFloat(participantTimeInput.value);
+
+            if (name && time >= 0) {
+                participants.push({ name, time });
+                participantNameInput.value = '';
+                participantTimeInput.value = '';
+                updateResults();
             }
-          });
-
-          // Ensure we have at least the number of hashtags requested, fill with random picks if necessary
-          while (hashtags.length < count && currentTags.length > 0) {
-            let randomTag =
-              currentTags[Math.floor(Math.random() * currentTags.length)];
-            if (!hashtags.includes(randomTag)) {
-              hashtags.push(randomTag);
-            }
-          }
-
-          // Display hashtags
-          $('#hashtagsDisplay').html(
-            hashtags
-              .slice(0, count)
-              .map((tag) => `<span class="hashtag">${tag}</span>`)
-              .join('')
-          );
         });
-      });
-    </script>
-  </body>
+
+        function updateResults() {
+            // Sort participants by time
+            participants.sort((a, b) => a.time - b.time);
+
+            // Clear the existing rows
+            resultsTableBody.innerHTML = '';
+
+            // Add participants to the table
+            participants.forEach((participant, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${participant.name}</td>
+                    <td>${participant.time.toFixed(2)}</td>
+                `;
+                resultsTableBody.appendChild(row);
+            });
+        }
+    });
+</script>
+
+</body>
 </html>

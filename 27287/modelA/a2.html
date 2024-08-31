@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Race Results</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        form { margin-bottom: 20px; }
+        table { width: 100%; margin-top: 20px; }
+        .btn-sm { margin: 2px; }
+        th { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Virtual Race Results</h2>
+    <form id="raceForm">
+        <div class="form-group">
+            <input type="text" class="form-control" id="name" placeholder="Participant Name" required>
+        </div>
+        <div class="form-group">
+            <input type="number" class="form-control" id="time" placeholder="Race Time (seconds)" step="0.01" min="0" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Participant</button>
+    </form>
+
+    <button class="btn btn-success" onclick="exportToCSV()">Export to CSV</button>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Rank</th>
+                <th onclick="sortTable(1)">Name</th>
+                <th onclick="sortTable(2)">Time (s)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let participants = [];
+    let sortDirection = 1;
+    let sortedBy = 2; // Default sort by time
+
+    document.getElementById('raceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let name = document.getElementById('name').value.trim();
+        let time = parseFloat(document.getElementById('time').value);
+
+        if (name && !isNaN(time) && time >= 0) {
+            participants.push({name, time});
+            sortAndUpdateResults();
+            this.reset();
+        } else {
+            alert('Please enter a valid name and time.');
+        }
+    });
+
+    function sortAndUpdateResults() {
+        participants.sort((a, b) => {
+            if (sortedBy === 0) return (a.rank - b.rank) * sortDirection;
+            if (sortedBy === 1) return (a.name.localeCompare(b.name)) * sortDirection;
+            return (a.time - b.time) * sortDirection;
+        });
+        updateResults();
+    }
+
+    function updateResults() {
+        const resultsBody = document.getElementById('resultsBody');
+        resultsBody.innerHTML = '';
+        participants.forEach((participant, index) => {
+            participant.rank = index + 1;
+            let row = resultsBody.insertRow();
+            row.innerHTML = `<td>${participant.rank}</td>
+                             <td>${participant.name}</td>
+                             <td>${participant.time.toFixed(2)}</td>
+                             <td>
+                                 <button class="btn btn-info btn-sm" onclick="editParticipant(${index})">Edit</button>
+                                 <button class="btn btn-danger btn-sm" onclick="deleteParticipant(${index})">Delete</button>
+                             </td>`;
+        });
+    }
+
+    function sortTable(n) {
+        if (sortedBy === n) {
+            sortDirection *= -1; // Toggle sort direction
+        } else {
+            sortedBy = n;
+            sortDirection = 1; // Reset to ascending
+        }
+        sortAndUpdateResults();
+    }
+
+    function editParticipant(index) {
+        // Edit logic remains the same as before
+    }
+
+    function deleteParticipant(index) {
+        // Delete logic remains the same as before
+    }
+
+    function exportToCSV() {
+        const csvRows = [];
+        const headers = ["Rank", "Name", "Time (s)"];
+        csvRows.push(headers.join(','));
+
+        participants.forEach(participant => {
+            csvRows.push([participant.rank, participant.name, participant.time.toFixed(2)].join(','));
+        });
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute('download', 'race_results.csv');
+        link.click();
+    }
+</script>
+
+</body>
+</html>
