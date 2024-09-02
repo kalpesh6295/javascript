@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Widget</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <style>
+        #timer { font-size: 2em; color: #007bff; }
+        .question { margin-bottom: 20px; }
+        .correct { color: green; }
+        .incorrect { color: red; }
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; }
+        #loader i { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <i class="fas fa-spinner fa-spin fa-3x"></i>
+    </div>
+    <div class="container mt-5">
+        <h1>Mock Test Widget</h1>
+        <form id="quiz-settings">
+            <div class="form-group">
+                <label for="difficulty">Difficulty:</label>
+                <select id="difficulty" class="form-control">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category" class="form-control">
+                    <option value="9">General Knowledge</option>
+                    <option value="18">Science: Computers</option>
+                    <option value="23">History</option>
+                    <!-- More categories as needed -->
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Start Test</button>
+        </form>
+        <div id="quiz-container" style="display: none;">
+            <div id="timer"></div>
+            <div id="questions"></div>
+            <button type="button" id="submit-test" class="btn btn-success" style="display: none;">Submit</button>
+        </div>
+        <div id="result-container" style="display: none;"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let timeLeft = 600; // 10 minutes in seconds
+            let timerId;
+            let questions;
+
+            $("#quiz-settings").submit(function(event) {
+                event.preventDefault();
+                $("#loader").show();
+                const difficulty = $("#difficulty").val();
+                const category = $("#category").val();
+                $.getJSON(`https://opentdb.com/api.php?amount=10&category=${category}&difficulty=${difficulty}&type=multiple`, function(data) {
+                    $("#loader").hide();
+                    questions = data.results;
+                    displayQuestions(questions);
+                    startTimer(timeLeft);
+                    $("#quiz-container").show();
+                    $("#submit-test").show();
+                });
+            });
+
+            $("#submit-test").click(function() {
+                submitTest();
+            });
+
+            function startTimer(duration) {
+                timerId = setInterval(function() {
+                    const minutes = parseInt(duration / 60, 10);
+                    const seconds = parseInt(duration % 60, 10);
+                    $("#timer").text(`${minutes}:${seconds < 10 ? '0' + seconds : seconds}`);
+                    if (--duration < 0) {
+                        submitTest();
+                    }
+                }, 1000);
+            }
+
+            function displayQuestions(questions) {
+                const questionsHtml = questions.map((question, index) => {
+                    const answers = [...question.incorrect_answers, question.correct_answer].sort(() => Math.random() - 0.5);
+                    return `<div class="question">
+                                <p>${index + 1}. ${question.question}</p>
+                                ${answers.map(answer => `<div><input type="radio" name="question_${index}" value="${answer}"> ${answer}</div>`).join('')}
+                            </div>`;
+                }).join('');
+                $("#questions").html(questionsHtml);
+            }
+
+            function submitTest() {
+                clearInterval(timerId);
+                $("#submit-test").hide();
+                const userAnswers = {};
+                $.each($("form input[type='radio']:checked"), function() {
+                    userAnswers[$(this).attr('name').split('_')[1]] = $(this).val();
+                });
+                const resultHtml = questions.map((question, index) => {
+                    const userAnswer = userAnswers[index];
+                    const correctAnswer = question.correct_answer;
+                    const correct = userAnswer === correctAnswer;
+                    return `<div class="${correct ? 'correct' : 'incorrect'}">
+                                <p>${index + 1}. ${question.question}</p>
+                                <p>Your answer: ${userAnswer ? userAnswer : 'Not answered'}</p>
+                                <p>Correct answer: ${correctAnswer}</p>
+                            </div>`;
+                }).join('');
+                const score = Object.keys(userAnswers).filter(key => userAnswers[key] === questions[key].correct_answer).length;
+                $("#result-container").html(`<h2>Your Score: ${score}/${questions.length}</h2>${resultHtml}`).show();
+            }
+        });
+    </script>
+</body>
+</html>

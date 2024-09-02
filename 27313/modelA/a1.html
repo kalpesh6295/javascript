@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mock Test Widget</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #testWidget {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            display: none;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .question { margin: 10px 0; }
+        .correct { background-color: #d4edda; }
+        .incorrect { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+
+<div id="testWidget">
+    <h2>Mock Test</h2>
+    <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+    <select id="category">
+        <option value="17">Science & Nature</option>
+        <option value="9">General Knowledge</option>
+        <option value="21">Sports</option>
+        <!-- Add more categories as needed -->
+    </select>
+    <button onclick="startTest()">Start Test</button>
+    <div id="loader" class="loader"></div>
+    <div id="questions"></div>
+    <div id="timer">Time Left: 10:00</div>
+    <button id="submitTest" style="display:none;" onclick="submitTest()">Submit Test</button>
+    <div id="results" style="display:none;"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    let questions = [];
+    let timer;
+    let timeLeft = 600; // 10 minutes in seconds
+
+    function startTest() {
+        $('#questions').hide();
+        $('#submitTest').hide();
+        $('#results').hide();
+        $('#loader').show();
+        const difficulty = $('#difficulty').val();
+        const category = $('#category').val();
+        
+        $.getJSON(`https://opentdb.com/api.php?amount=10&category=${category}&difficulty=${difficulty}&type=multiple`, function(data) {
+            questions = data.results;
+            displayQuestions();
+            startTimer();
+        }).fail(function() {
+            alert('Failed to load questions. Please try again.');
+        });
+    }
+
+    function displayQuestions() {
+        let html = '';
+        questions.forEach((q, index) => {
+            html += `<div class="question"><p>${index + 1}. ${q.question}</p><ul>`;
+            let answers = [...q.incorrect_answers, q.correct_answer].sort(() => Math.random() - 0.5);
+            answers.forEach(answer => {
+                html += `<li><input type="radio" name="q${index}" value="${answer}"> ${answer}</li>`;
+            });
+            html += '</ul></div>';
+        });
+        $('#questions').html(html).show();
+        $('#loader').hide();
+        $('#submitTest').show();
+    }
+
+    function startTimer() {
+        timer = setInterval(() => {
+            timeLeft--;
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            $('#timer').text(`Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                submitTest();
+            }
+        }, 1000);
+    }
+
+    function submitTest() {
+        clearInterval(timer);
+        let score = 0;
+        questions.forEach((q, index) => {
+            if ($(`input[name=q${index}]:checked`).val() === q.correct_answer) {
+                score++;
+            }
+        });
+        displayResults(score);
+    }
+
+    function displayResults(score) {
+        $('#questions').hide();
+        $('#submitTest').hide();
+        $('#results').html(`Your Score: ${score} out of ${questions.length}`).show();
+        reviewAnswers();
+    }
+
+    function reviewAnswers() {
+        questions.forEach((q, index) => {
+            let userAnswer = $(`input[name=q${index}]:checked`).val();
+            let correctAnswer = q.correct_answer;
+            let li = $(`input[name=q${index}][value="${userAnswer}"]`).parent();
+            if (userAnswer === correctAnswer) {
+                li.addClass('correct');
+            } else {
+                li.addClass('incorrect');
+                li.append(` (Correct: ${correctAnswer})`);
+            }
+        });
+        $('#questions').show();
+    }
+</script>
+
+</body>
+</html>

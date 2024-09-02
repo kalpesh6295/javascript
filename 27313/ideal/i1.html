@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mock Test Widget</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f0f2f5;
+        padding: 20px;
+        color: #333;
+      }
+
+      #testWidget {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 30px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        text-align: center;
+        color: #333;
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+
+      select,
+      button {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 16px;
+        outline: none;
+        background-color: #f9f9f9;
+        transition: all 0.3s ease;
+      }
+
+      button {
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 2s linear infinite;
+        display: none;
+        margin: 20px auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .question {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        border: 1px solid #eee;
+      }
+
+      .correct {
+        background-color: #d4edda;
+        padding: 5px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      .incorrect {
+        background-color: #f8d7da;
+        padding: 5px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      #timer {
+        text-align: right;
+        font-weight: bold;
+        color: #ff0000;
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+
+      #results {
+        margin-top: 20px;
+        font-size: 20px;
+        text-align: center;
+        color: #28a745;
+        font-weight: 600;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      li {
+        margin: 5px 0;
+      }
+
+      label {
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.3s ease;
+      }
+
+      input[type='radio'] {
+        margin-right: 10px;
+      }
+
+      input[type='radio']:disabled + label {
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="testWidget">
+      <h2>Mock Test</h2>
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <select id="category">
+        <option value="9">General Knowledge</option>
+        <option value="10">Entertainment: Books (English)</option>
+        <option value="17">Science & Nature</option>
+        <option value="19">Mathematics</option>
+        <option value="21">Sports</option>
+        <option value="22">Geography (Reasoning)</option>
+        <option value="23">History (Reasoning)</option>
+        <option value="25">Art (English)</option>
+      </select>
+      <button onclick="startTest()">Start Test</button>
+      <div id="loader" class="loader"></div>
+      <div id="timer" style="display: none">Time Left: 10:00</div>
+      <div id="questions"></div>
+      <button id="submitTest" style="display: none" onclick="submitTest()">
+        Submit Test
+      </button>
+      <div id="results" style="display: none"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      let questions = [];
+      let timer;
+
+      // Function to start the test
+      function startTest() {
+        $('#questions').hide();
+        $('#submitTest').hide();
+        $('#results').hide();
+        $('#loader').show(); // Show the loader while fetching questions
+        $('#timer').hide();
+        const difficulty = $('#difficulty').val();
+        const category = $('#category').val();
+
+        // Fetch questions from the API
+        $.getJSON(
+          `https://opentdb.com/api.php?amount=10&category=${category}&difficulty=${difficulty}&type=multiple`,
+          function (data) {
+            questions = data.results;
+            displayQuestions(); // Display questions once they are fetched
+            startTimer(); // Start the timer
+          }
+        ).fail(function () {
+          alert('Failed to load questions. Please try again.');
+          $('#loader').hide();
+        });
+      }
+
+      // Function to display the questions
+      function displayQuestions() {
+        let html = '';
+        questions.forEach((q, index) => {
+          html += `<div class="question"><p>${index + 1}. ${
+            q.question
+          }</p><ul>`;
+          let answers = [...q.incorrect_answers, q.correct_answer].sort(
+            () => Math.random() - 0.5
+          );
+          answers.forEach((answer) => {
+            html += `<li><input type="radio" name="q${index}" value="${answer}"> <label>${answer}</label></li>`;
+          });
+          html += '</ul></div>';
+        });
+        $('#questions').html(html).show();
+        $('#loader').hide();
+        $('#timer').show();
+        $('#submitTest').show();
+      }
+
+      // Function to start the countdown timer
+      function startTimer() {
+        clearInterval(timer); // Stop the timer
+        let timeLeft = 600; // 10 minutes in seconds
+        $('#timer').text('Time Left: 10:00'); // Setting initial time
+        $('#timer').show();
+        timer = setInterval(() => {
+          timeLeft--;
+          let minutes = Math.floor(timeLeft / 60);
+          let seconds = timeLeft % 60;
+          $('#timer').text(
+            `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
+          );
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            submitTest(); // Automatically submit the test when time runs out
+          }
+        }, 1000);
+      }
+
+      // Function to submit the test and calculate the score
+      function submitTest() {
+        clearInterval(timer); // Stop the timer
+        let score = 0;
+        questions.forEach((q, index) => {
+          let selectedOption = $(`input[name=q${index}]:checked`).val();
+          let correctAnswer = decodeHtml(q.correct_answer);
+          let li = $(
+            `input[name=q${index}][value="${selectedOption}"]`
+          ).parent();
+          if (selectedOption === correctAnswer) {
+            score++;
+            li.addClass('correct');
+          } else {
+            li.addClass('incorrect');
+            $(`input[name=q${index}][value="${correctAnswer}"]`)
+              .parent()
+              .addClass('correct');
+          }
+        });
+        displayResults(score);
+        disableRadioButtons(); // Disable the radio buttons after submission
+      }
+
+      // Function to display the results after submission
+      function displayResults(score) {
+        $('#questions').show();
+        $('#submitTest').hide();
+        $('#results')
+          .html(`Your Score: ${score} out of ${questions.length}`)
+          .show();
+      }
+
+      // Function to disable all radio buttons
+      function disableRadioButtons() {
+        $('input[type="radio"]').prop('disabled', true); // Disable radio buttons
+      }
+      function decodeHtml(html) {
+        const txt = document.createElement('textarea');
+        txt.innerHTML = html;
+        return txt.value;
+      }
+    </script>
+  </body>
+</html>
