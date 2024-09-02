@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Mental Health Check-in</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        #thoughts { width: 100%; padding: 10px; margin: 10px 0; }
+        #advice, #moodHistory { margin-top: 20px; }
+        #moodGraph { width: 100%; height: 200px; background: #f8f9fa; border: 1px solid #ced4da; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Mental Health Check-in</h2>
+        <form id="checkinForm">
+            <select id="moodSelect" class="form-control mb-2">
+                <!-- Mood options remain the same -->
+            </select>
+            <textarea id="thoughts" placeholder="Write your thoughts here..." rows="4" class="form-control"></textarea>
+            <button type="submit" class="btn btn-primary mt-2">Check-in</button>
+        </form>
+        <div id="advice" class="alert alert-info" style="display: none;"></div>
+        <!-- New section for mood history -->
+        <div id="moodHistory" class="mt-4">
+            <h3>Your Mood History</h3>
+            <div id="moodGraph"></div>
+            <ul id="historyList" class="list-group mt-2"></ul>
+        </div>
+    </div>
+
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        const moodOptions = ['happy', 'sad', 'anxious', 'excited', 'tired'];
+        moodOptions.forEach(mood => $('#moodSelect').append(new Option(mood, mood)));
+
+        // Function to save mood
+        function saveMood(mood, thoughts) {
+            let history = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+            history.push({mood: mood, date: new Date().toLocaleDateString(), thoughts: thoughts});
+            localStorage.setItem('moodHistory', JSON.stringify(history));
+        }
+
+        // Function to display mood history
+        function displayMoodHistory() {
+            let history = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+            $('#historyList').empty();
+            history.forEach(entry => {
+                $('#historyList').prepend(`<li class="list-group-item">${entry.date}: ${entry.mood} - ${entry.thoughts.slice(0, 20)}...</li>`);
+            });
+            // Simple visualization (could be improved with a proper charting library)
+            $('#moodGraph').html(`<div style="height: 100%; width: ${history.length * 20}px; background-color: #e9ecef;"></div>`);
+        }
+
+        $('#checkinForm').submit(function(event) {
+            event.preventDefault();
+            const mood = $('#moodSelect').val();
+            const thoughts = $('#thoughts').val();
+            saveMood(mood, thoughts);
+            displayMoodHistory();
+            // Existing API call for advice would go here
+        });
+
+        // Initial display of mood history on page load
+        displayMoodHistory();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Check-in</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .mood-button { margin: 5px; }
+        #thoughts { width: 100%; padding: 10px; margin: 10px 0; }
+        #advice { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Mental Health Check-in</h2>
+        <form id="checkinForm">
+            <div class="form-group">
+                <label for="moodSelect">How are you feeling today?</label>
+                <select id="moodSelect" class="form-control">
+                    <option value="happy">Happy</option>
+                    <option value="sad">Sad</option>
+                    <option value="anxious">Anxious</option>
+                    <option value="excited">Excited</option>
+                    <option value="tired">Tired</option>
+                </select>
+            </div>
+            <textarea id="thoughts" placeholder="Write your thoughts here..." rows="4"></textarea>
+            <button type="submit" class="btn btn-primary">Check-in</button>
+        </form>
+        <div id="advice" class="alert" style="display: none;"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#checkinForm").submit(function(event) {
+                event.preventDefault();
+                const mood = $("#moodSelect").val();
+                const thoughts = $("#thoughts").val();
+
+                // API Call to Advice Slip
+                $.ajax({
+                    type: 'GET',
+                    url: `https://api.adviceslip.com/advice/search/${mood}`,
+                    success: function(data) {
+                        const advice = data.slips ? data.slips[0].advice : "No specific advice for today, take care of yourself!";
+                        $("#advice").html(advice).slideDown();
+                    },
+                    error: function() {
+                        $("#advice").html("Failed to fetch advice. Please try again later.").slideDown();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

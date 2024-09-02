@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mental Health Check-In</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .widget {
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+    .mood-btn {
+        margin: 5px;
+    }
+    #advice {
+        margin-top: 20px;
+        padding: 10px;
+        background: #e9ecef;
+        border-radius: 4px;
+    }
+</style>
+</head>
+<body>
+
+<div class="widget">
+    <h3 class="text-center">How are you feeling today?</h3>
+    <div id="moodSelection" class="text-center">
+        <button class="btn btn-outline-primary mood-btn" data-mood="happy">Happy</button>
+        <button class="btn btn-outline-secondary mood-btn" data-mood="neutral">Neutral</button>
+        <button class="btn btn-outline-danger mood-btn" data-mood="sad">Sad</button>
+    </div>
+    <textarea id="thoughts" class="form-control mt-3" rows="3" placeholder="Write your thoughts here..."></textarea>
+    <button id="submitBtn" class="btn btn-success btn-block mt-3">Submit</button>
+    <div id="advice" class="text-center"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+$(document).ready(function() {
+    let selectedMood;
+
+    $('.mood-btn').on('click', function() {
+        selectedMood = $(this).data('mood');
+        $('.mood-btn').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    $('#submitBtn').on('click', function() {
+        let thoughts = $('#thoughts').val();
+        if (!selectedMood) {
+            alert('Please select your mood.');
+            return;
+        }
+
+        // Here we would typically send this data to a server, but for simplicity:
+        $.ajax({
+            url: 'https://api.adviceslip.com/advice',
+            dataType: 'json',
+            success: function(data) {
+                let advice = data.slip.advice;
+                let moodAdvice = advice; // Ideally, this would be filtered or selected based on mood
+                
+                $('#advice').html(`<strong>Your advice:</strong> ${moodAdvice}`);
+            },
+            error: function() {
+                $('#advice').html('<strong>Error:</strong> Unable to fetch advice at this time.');
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mental Health Check-in</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            padding: 20px;
+        }
+        #thoughts {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        #advice {
+            margin-top: 20px;
+        }
+        #history {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Mental Health Check-in</h2>
+        <form id="checkinForm">
+            <div class="form-group">
+                <label for="moodSelect">How are you feeling today?</label>
+                <select id="moodSelect" class="form-control">
+                    <option value="happy">Happy</option>
+                    <option value="sad">Sad</option>
+                    <option value="anxious">Anxious</option>
+                    <option value="excited">Excited</option>
+                    <option value="tired">Tired</option>
+                </select>
+            </div>
+            <textarea id="thoughts" required placeholder="Write your thoughts here..." rows="4"></textarea>
+            <button type="submit" class="btn btn-primary">Check-in</button>
+        </form>
+        <div id="advice" class="alert alert-info" style="display: none"></div>
+        
+        <!-- Section to display mood history -->
+        <div id="history" class="mt-4">
+            <h4>Mood History</h4>
+            <ul id="moodHistoryList" class="list-group"></ul>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Load mood history on page load
+            loadMoodHistory();
+
+            // Event listener for form submission
+            $('#checkinForm').submit(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+                const mood = $('#moodSelect').val(); // Get the selected mood value
+                const thoughts = $('#thoughts').val(); // Get the entered thoughts
+
+                // Store the current mood and thoughts in local storage
+                storeMoodHistory(mood, thoughts);
+
+                // API Call to Advice Slip based on the selected mood
+                $.ajax({
+                    type: 'GET',
+                    url: `https://api.adviceslip.com/advice/search/${mood}`,
+                    success: function (data) {
+                        const parsedData = JSON.parse(data); // Parse the API response
+                        if (
+                            parsedData && // Ensure the response is valid
+                            parsedData.slips && // Check if 'slips' array is present
+                            parsedData.slips.length > 0 // Ensure there's at least one slip
+                        ) {
+                            const advice = parsedData.slips[0].advice; // Get the first advice slip
+                            $('#advice').html(advice).slideDown(); // Display the advice in the advice section
+                        } else {
+                            // Show a default message if no advice is found
+                            $('#advice')
+                                .html('No specific advice for today, take care of yourself!')
+                                .slideDown();
+                        }
+                    },
+                    error: function () {
+                        // Handle errors if the API request fails
+                        $('#advice')
+                            .html('Failed to fetch advice. Please try again later.')
+                            .slideDown();
+                    },
+                });
+
+                // Update the mood history list
+                loadMoodHistory();
+            });
+
+            // Function to store mood history in local storage
+            function storeMoodHistory(mood, thoughts) {
+                const currentDateTime = new Date().toLocaleString();
+                const history = JSON.parse(localStorage.getItem('moodHistory')) || [];
+                history.push({ mood, thoughts, dateTime: currentDateTime });
+                localStorage.setItem('moodHistory', JSON.stringify(history));
+            }
+
+            // Function to load and display mood history from local storage
+            function loadMoodHistory() {
+                const history = JSON.parse(localStorage.getItem('moodHistory')) || [];
+                const moodHistoryList = $('#moodHistoryList');
+                moodHistoryList.empty();
+                history.forEach((entry) => {
+                    const listItem = `<li class="list-group-item">
+                        <strong>${entry.mood}</strong> on ${entry.dateTime}
+                        <p>${entry.thoughts}</p>
+                    </li>`;
+                    moodHistoryList.append(listItem);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

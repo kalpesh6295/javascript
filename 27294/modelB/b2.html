@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Check-in with Mood Tracking</title>
+    <!-- Include Bootstrap for styling -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Chart.js for simple charting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
+    <style>
+        body { padding: 20px; }
+        #thoughts { width: 100%; padding: 10px; margin: 10px 0; }
+        #moodHistory { margin-top: 20px; }
+        #moodChart { width: 100%; height: 300px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Mental Health Check-in with Mood Tracking</h2>
+    <form id="checkinForm">
+        <div class="form-group">
+            <label for="moodSelect">How are you feeling today?</label>
+            <select id="moodSelect" class="form-control">
+                <option value="happy">Happy</option>
+                <option value="sad">Sad</option>
+                <option value="anxious">Anxious</option>
+                <option value="excited">Excited</option>
+                <option value="tired">Tired</option>
+            </select>
+        </div>
+        <textarea id="thoughts" required placeholder="Write your thoughts here..." rows="4"></textarea>
+        <button type="submit" class="btn btn-primary">Check-in</button>
+    </form>
+    <div id="advice" class="alert alert-info" style="display: none;"></div>
+    <div id="moodHistory">
+        <h3>Your Mood History</h3>
+        <canvas id="moodChart"></canvas>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    const moodHistory = JSON.parse(localStorage.getItem('moodHistory')) || [];
+    const moodLabels = moodHistory.map(entry => entry.date);
+    const moodData = moodHistory.map(entry => entry.mood);
+
+    // Initialize Chart
+    const ctx = document.getElementById('moodChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: moodLabels,
+            datasets: [{
+                label: 'Mood Over Time',
+                data: moodData,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    $('#checkinForm').submit(function(event) {
+        event.preventDefault();
+        const mood = $('#moodSelect').val();
+        const thoughts = $('#thoughts').val();
+        const date = new Date().toLocaleDateString();
+
+        moodHistory.push({ mood, thoughts, date });
+        localStorage.setItem('moodHistory', JSON.stringify(moodHistory));
+
+        // Update chart with new data
+        moodLabels.push(date);
+        moodData.push(mood);
+        Chart.getChart(ctx).update();
+
+        // API Call to Advice Slip API remains similar to previous example
+    });
+});
+</script>
+</body>
+</html>

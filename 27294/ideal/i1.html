@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mental Health Check-in</title>
+    <!-- Including Bootstrap CSS for styling -->
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      /* Add some padding around the body content */
+      body {
+        padding: 20px;
+      }
+      /* Style the textarea for daily thoughts */
+      #thoughts {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      /* Add some margin to the advice section */
+      #advice {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Mental Health Check-in</h2>
+      <!-- Check-in form for selecting mood and entering thoughts -->
+      <form id="checkinForm">
+        <div class="form-group">
+          <label for="moodSelect">How are you feeling today?</label>
+          <!-- Dropdown to select current mood -->
+          <select id="moodSelect" class="form-control">
+            <option value="happy">Happy</option>
+            <option value="sad">Sad</option>
+            <option value="anxious">Anxious</option>
+            <option value="excited">Excited</option>
+            <option value="tired">Tired</option>
+          </select>
+        </div>
+        <!-- Textarea for users to write their thoughts -->
+        <textarea
+          id="thoughts"
+          required
+          placeholder="Write your thoughts here..."
+          rows="4"
+        ></textarea>
+        <!-- Submit button for the form -->
+        <button type="submit" class="btn btn-primary">Check-in</button>
+      </form>
+      <!-- Section to display advice after submission -->
+      <div id="advice" class="alert alert-info" style="display: none"></div>
+    </div>
+
+    <!-- Including jQuery library for handling AJAX requests -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        // Event listener for form submission
+        $('#checkinForm').submit(function (event) {
+          event.preventDefault(); // Prevent the default form submission
+          const mood = $('#moodSelect').val(); // Get the selected mood value
+          const thoughts = $('#thoughts').val(); // Get the entered thoughts
+
+          // API Call to Advice Slip based on the selected mood
+          $.ajax({
+            type: 'GET',
+            url: `https://api.adviceslip.com/advice/search/${mood}`,
+            success: function (data) {
+              const parsedData = JSON.parse(data); // Parse the API response
+              if (
+                parsedData && // Ensure the response is valid
+                parsedData.slips && // Check if 'slips' array is present
+                parsedData.slips.length > 0 // Ensure there's at least one slip
+              ) {
+                const advice = parsedData.slips[0].advice; // Get the first advice slip
+                $('#advice').html(advice).slideDown(); // Display the advice in the advice section
+              } else {
+                // Show a default message if no advice is found
+                $('#advice')
+                  .html('No specific advice for today, take care of yourself!')
+                  .slideDown();
+              }
+            },
+            error: function () {
+              // Handle errors if the API request fails
+              $('#advice')
+                .html('Failed to fetch advice. Please try again later.')
+                .slideDown();
+            },
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
