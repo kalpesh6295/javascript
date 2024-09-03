@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Card Matching Game</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f2f5;
+        padding: 20px;
+        color: #333;
+        text-align: center;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .controls {
+        margin-bottom: 20px;
+      }
+
+      .game-container {
+        display: grid;
+        grid-gap: 10px;
+        justify-content: center;
+        margin: 20px auto;
+        perspective: 1000px; /* Perspective for 3D effect */
+      }
+
+      .card {
+        width: 100px;
+        height: 100px;
+        position: relative;
+        cursor: pointer;
+        transform-style: preserve-3d;
+        transition: transform 0.6s ease;
+      }
+
+      .card.flipped {
+        transform: rotateY(180deg);
+      }
+
+      .card-inner {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        transform-style: preserve-3d;
+        transition: transform 0.6s ease;
+        backface-visibility: hidden;
+        border-radius: 8px;
+      }
+
+      .card-front,
+      .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+        backface-visibility: hidden;
+      }
+
+      .card-front {
+        background-color: #3498db;
+        font-size: 2em;
+        color: #fff;
+        transform: rotateY(0deg);
+      }
+
+      .card-back {
+        background-color: #e74c3c;
+        transform: rotateY(180deg);
+        font-size: 2em;
+        color: #fff;
+      }
+
+      .card.matched .card-back {
+        background-color: #2ecc71;
+      }
+
+      #timer {
+        font-size: 1.5em;
+        color: #007bff;
+        margin-top: 20px;
+      }
+
+      #restart-btn {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #e74c3c;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+      }
+
+      #restart-btn:hover {
+        background-color: #c0392b;
+      }
+
+      #difficulty {
+        margin-bottom: 20px;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+      }
+
+      #best-time {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 1.2em;
+        color: #28a745;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Memory Card Matching Game</h1>
+    <div id="best-time">Best Time: <span id="best-time-value">0</span></div>
+    <div class="controls">
+      <select id="difficulty">
+        <option value="easy">Easy (3x4)</option>
+        <option value="medium">Medium (4x4)</option>
+        <option value="hard">Hard (5x4)</option>
+      </select>
+    </div>
+    <div id="timer">Time Left: 60</div>
+    <div class="game-container" id="game-container">
+      <!-- Cards will be generated here -->
+    </div>
+    <button id="restart-btn">Restart Game</button>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const cardsArray = [
+          { name: '🍎', id: 1 },
+          { name: '🍌', id: 2 },
+          { name: '🍉', id: 3 },
+          { name: '🍇', id: 4 },
+          { name: '🍓', id: 5 },
+          { name: '🍍', id: 6 },
+          { name: '🍒', id: 7 },
+          { name: '🍑', id: 8 },
+          { name: '🥭', id: 9 },
+          { name: '🍋', id: 10 },
+        ];
+
+        const gameContainer = document.getElementById('game-container');
+        const difficultySelect = document.getElementById('difficulty');
+        const bestTimeValue = document.getElementById('best-time-value');
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+        let timer;
+        let timeLeft = 60;
+        let timeElapsed = 0;
+        let totalMatch = 0;
+        let matchNeeded = 6;
+        let bestTime = { easy: null, medium: null, hard: null };
+
+        // Shuffle cards randomly
+        function shuffleCards(cards) {
+          return cards.sort(() => 0.5 - Math.random());
+        }
+
+        // Generate cards based on the selected difficulty level
+        function generateCards() {
+          totalMatch = 0;
+          timeElapsed = 0;
+          const difficulty = difficultySelect.value;
+          let selectedCards = [];
+          switch (difficulty) {
+            case 'easy':
+              matchNeeded = 6;
+              selectedCards = shuffleCards(cardsArray).slice(0, 6);
+              gameContainer.style.gridTemplateColumns = 'repeat(4, 100px)';
+              break;
+            case 'medium':
+              matchNeeded = 8;
+              selectedCards = shuffleCards(cardsArray).slice(0, 8);
+              gameContainer.style.gridTemplateColumns = 'repeat(4, 100px)';
+              break;
+            case 'hard':
+              matchNeeded = 10;
+              selectedCards = shuffleCards(cardsArray).slice(0, 10);
+              gameContainer.style.gridTemplateColumns = 'repeat(5, 100px)';
+              break;
+          }
+          selectedCards = shuffleCards([...selectedCards, ...selectedCards]);
+
+          gameContainer.innerHTML = '';
+          selectedCards.forEach((item) => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.name = item.name;
+            card.dataset.id = item.id;
+            card.innerHTML = `
+                        <div class="card-inner">
+                            <div class="card-front">?</div>
+                            <div class="card-back">${item.name}</div>
+                        </div>
+                    `;
+            card.addEventListener('click', flipCard);
+            gameContainer.appendChild(card);
+          });
+
+          startTimer();
+          updateBestTime();
+        }
+
+        // Flip the selected card
+        function flipCard() {
+          if (lockBoard) return;
+          if (this === firstCard) return;
+
+          this.classList.add('flipped');
+
+          if (!hasFlippedCard) {
+            hasFlippedCard = true;
+            firstCard = this;
+            return;
+          }
+
+          secondCard = this;
+          checkForMatch();
+        }
+
+        // Check if the two flipped cards match
+        function checkForMatch() {
+          let isMatch = firstCard.dataset.name === secondCard.dataset.name;
+          isMatch ? disableCards() : unflipCards();
+          if (isMatch) {
+            totalMatch++;
+            // Check if all cards are flipped
+            if (totalMatch === matchNeeded) {
+              clearInterval(timer);
+              setTimeout(() => {
+                alert('Congratulations! You have won!');
+                trackBestTime();
+              }, 1000);
+            }
+          }
+        }
+
+        // Disable matched cards
+        function disableCards() {
+          firstCard.classList.add('matched');
+          secondCard.classList.add('matched');
+          resetBoard();
+        }
+
+        // Unflip non-matching cards
+        function unflipCards() {
+          lockBoard = true;
+          setTimeout(() => {
+            firstCard.classList.remove('flipped');
+            secondCard.classList.remove('flipped');
+            resetBoard();
+          }, 1000);
+        }
+
+        // Reset board variables after a match/unmatch check
+        function resetBoard() {
+          [hasFlippedCard, lockBoard] = [false, false];
+          [firstCard, secondCard] = [null, null];
+        }
+
+        // Start the game timer
+        function startTimer() {
+          timeLeft = 60;
+          clearInterval(timer);
+          timer = setInterval(() => {
+            timeLeft--;
+            timeElapsed++;
+            document.getElementById(
+              'timer'
+            ).textContent = `Time Left: ${timeLeft}`;
+            if (timeLeft <= 0) {
+              clearInterval(timer);
+              alert("Time's up! Game Over!");
+              disableAllCards();
+            }
+          }, 1000);
+        }
+
+        // Track and store the best time
+        function trackBestTime() {
+          const difficulty = difficultySelect.value;
+          if (!bestTime[difficulty] || timeElapsed < bestTime[difficulty]) {
+            bestTime[difficulty] = timeElapsed;
+            updateBestTime();
+          }
+        }
+
+        // Update the best time display
+        function updateBestTime() {
+          const difficulty = difficultySelect.value;
+          bestTimeValue.textContent = bestTime[difficulty]
+            ? `${bestTime[difficulty]} seconds`
+            : '0';
+        }
+
+        // Disable all cards (for when the game is over)
+        function disableAllCards() {
+          const allCards = document.querySelectorAll('.card');
+          allCards.forEach((card) => {
+            card.removeEventListener('click', flipCard);
+          });
+        }
+
+        // Add event listeners to start the game and restart the game
+        document
+          .getElementById('restart-btn')
+          .addEventListener('click', generateCards);
+        difficultySelect.addEventListener('change', generateCards);
+
+        generateCards(); // Start the game initially
+      });
+    </script>
+  </body>
+</html>
