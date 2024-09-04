@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dice Betting Game</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f7f7f7;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .game-container {
+        text-align: center;
+        background-color: white;
+        padding: 30px;
+        max-width: 90%;
+        width: 900px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+      }
+
+      .dice-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+
+      .dice {
+        width: 70px;
+        height: 70px;
+        margin: 0 10px;
+        background-color: #3498db;
+        color: white;
+        font-size: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s;
+      }
+
+      .dice:hover {
+        transform: scale(1.1);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .grid-item {
+        background-color: #f0f8ff;
+        border: 1px solid #bdc3c7;
+        border-radius: 10px;
+        padding: 15px;
+        font-size: 16px;
+        text-align: center;
+        transition: background-color 0.3s, box-shadow 0.3s;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .grid-item:hover {
+        background-color: #e0f7fa;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      .grid-item input {
+        width: 70px;
+        padding: 5px;
+        margin-top: 10px;
+        font-size: 16px;
+        max-width: 100px;
+      }
+
+      button {
+        padding: 12px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+        background-color: #3498db;
+        color: white;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      #result {
+        font-size: 22px;
+        margin-top: 20px;
+        border: 2px solid #3498db;
+        border-radius: 10px;
+        background-color: #ecf0f1;
+        color: #2c3e50;
+        height: 36px;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      .bet-options {
+        margin-bottom: 20px;
+      }
+
+      .bet-options h2 {
+        color: #2980b9;
+        margin-bottom: 10px;
+      }
+
+      .winning-bet {
+        background-color: #2ecc71 !important;
+      }
+
+      .losing-bet {
+        background-color: #e74c3c !important;
+      }
+
+      @media (max-width: 768px) {
+        .dice {
+          width: 60px;
+          height: 60px;
+          font-size: 24px;
+        }
+
+        .grid-item input {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Dice Betting Game</h1>
+      <div class="dice-container">
+        <div class="dice" id="dice1">-</div>
+        <div class="dice" id="dice2">-</div>
+        <div class="dice" id="dice3">-</div>
+      </div>
+      <div class="bet-options">
+        <h2>Place Your Bets</h2>
+        <div class="grid">
+          <div class="grid-item" id="sum-bet-4">
+            Sum 4:
+            <input type="number" id="bet-sum-4" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-5">
+            Sum 5:
+            <input type="number" id="bet-sum-5" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-6">
+            Sum 6:
+            <input type="number" id="bet-sum-6" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-7">
+            Sum 7:
+            <input type="number" id="bet-sum-7" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-8">
+            Sum 8:
+            <input type="number" id="bet-sum-8" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-9">
+            Sum 9:
+            <input type="number" id="bet-sum-9" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-10">
+            Sum 10:
+            <input type="number" id="bet-sum-10" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-11">
+            Sum 11:
+            <input type="number" id="bet-sum-11" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-12">
+            Sum 12:
+            <input type="number" id="bet-sum-12" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-13">
+            Sum 13:
+            <input type="number" id="bet-sum-13" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-14">
+            Sum 14:
+            <input type="number" id="bet-sum-14" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-15">
+            Sum 15:
+            <input type="number" id="bet-sum-15" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-16">
+            Sum 16:
+            <input type="number" id="bet-sum-16" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="sum-bet-17">
+            Sum 17:
+            <input type="number" id="bet-sum-17" min="0" max="100" value="0" />
+          </div>
+        </div>
+
+        <h2>Odd, Even</h2>
+        <div class="grid">
+          <div class="grid-item" id="bet-odd-container">
+            Odd:
+            <input type="number" id="bet-odd" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="bet-even-container">
+            Even:
+            <input type="number" id="bet-even" min="0" max="100" value="0" />
+          </div>
+        </div>
+
+        <h2>Low, High</h2>
+        <div class="grid">
+          <div class="grid-item" id="bet-low-container">
+            &lt;= 10:
+            <input type="number" id="bet-low" min="0" max="100" value="0" />
+          </div>
+          <div class="grid-item" id="bet-high-container">
+            &gt; 10:
+            <input type="number" id="bet-high" min="0" max="100" value="0" />
+          </div>
+        </div>
+
+        <h2>Triplets</h2>
+        <div class="grid">
+          <div class="grid-item" id="triple-1-container">
+            Triple 1:
+            <input
+              type="number"
+              id="bet-triple-1"
+              min="0"
+              max="100"
+              value="0"
+            />
+          </div>
+          <div class="grid-item" id="triple-2-container">
+            Triple 2:
+            <input
+              type="number"
+              id="bet-triple-2"
+              min="0"
+              max="100"
+              value="0"
+            />
+          </div>
+          <div class="grid-item" id="triple-3-container">
+            Triple 3:
+            <input
+              type="number"
+              id="bet-triple-3"
+              min="0"
+              max="100"
+              value="0"
+            />
+          </div>
+          <div class="grid-item" id="triple-4-container">
+            Triple 4:
+            <input
+              type="number"
+              id="bet-triple-4"
+              min="0"
+              max="100"
+              value="0"
+            />
+          </div>
+          <div class="grid-item" id="triple-5-container">
+            Triple 5:
+            <input
+              type="number"
+              id="bet-triple-5"
+              min="0"
+              max="100"
+              value="0"
+            />
+          </div>
+          <div class="grid-item" id="triple-6-container">
+            Triple 6:
+            <input
+              type="number"
+              id="bet-triple-6"
+              min="0"
+              max="100"
+              value="0"
+            />
+          </div>
+        </div>
+      </div>
+
+      <button onclick="rollDice()">Roll Dice</button>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      const sumOdds = {
+        4: 72,
+        5: 36,
+        6: 21,
+        7: 14,
+        8: 10,
+        9: 8,
+        10: 8,
+        11: 8,
+        12: 8,
+        13: 10,
+        14: 14,
+        15: 21,
+        16: 36,
+        17: 72,
+      };
+
+      // Main function to roll the dice and handle the game logic
+      function rollDice() {
+        // Disable the Roll Dice button after it's clicked
+        document.querySelector('button').disabled = true;
+
+        // Calculate the total bet placed by the user
+        const totalBet = calculateTotalBet();
+
+        // Ensure that the user has placed a bet
+        if (totalBet === 0) {
+          alert('Please place a bet.');
+          resetBet(); // Reset bets if no bet is placed
+          return;
+        }
+
+        // Ensure the bet doesn't exceed $100
+        if (totalBet > 100) {
+          alert('You cannot place more than $100 on a single bet!');
+          resetBet(); // Reset bets if the bet is too high
+          return;
+        }
+
+        // Roll three dice, generating random numbers between 1 and 6
+        const dice1 = Math.floor(Math.random() * 6) + 1;
+        const dice2 = Math.floor(Math.random() * 6) + 1;
+        const dice3 = Math.floor(Math.random() * 6) + 1;
+        const total = dice1 + dice2 + dice3;
+
+        // Display the dice results
+        document.getElementById('dice1').textContent = dice1;
+        document.getElementById('dice2').textContent = dice2;
+        document.getElementById('dice3').textContent = dice3;
+
+        // Check for odd/even and triple conditions
+        const isOdd = total % 2 !== 0;
+
+        // Collect the user bets from the sum fields
+        const betSums = {};
+        for (let i = 4; i <= 17; i++) {
+          betSums[i] =
+            parseFloat(document.getElementById(`bet-sum-${i}`).value) || 0;
+        }
+
+        // Collect other bets (odd, even, low, high)
+        const betOdd =
+          parseFloat(document.getElementById('bet-odd').value) || 0;
+        const betEven =
+          parseFloat(document.getElementById('bet-even').value) || 0;
+        const betLow =
+          parseFloat(document.getElementById('bet-low').value) || 0;
+        const betHigh =
+          parseFloat(document.getElementById('bet-high').value) || 0;
+
+        let totalWinnings = 0; // Store total winnings
+
+        // Evaluate each sum bet and calculate winnings
+        for (let i = 4; i <= 17; i++) {
+          const sumContainer = document.getElementById(`sum-bet-${i}`);
+          if (i === total && betSums[i]) {
+            sumContainer.classList.add('winning-bet');
+            totalWinnings += betSums[i] * sumOdds[i];
+          } else if (betSums[i]) {
+            sumContainer.classList.add('losing-bet');
+          }
+        }
+
+        // Evaluate odd/even bets
+        document
+          .getElementById('bet-odd-container')
+          .classList.toggle('winning-bet', isOdd && betOdd > 0);
+        document
+          .getElementById('bet-even-container')
+          .classList.toggle('winning-bet', !isOdd && betEven > 0);
+        document
+          .getElementById('bet-low-container')
+          .classList.toggle('winning-bet', total <= 10 && betLow > 0);
+        document
+          .getElementById('bet-high-container')
+          .classList.toggle('winning-bet', total > 10 && betHigh > 0);
+
+        document
+          .getElementById('bet-odd-container')
+          .classList.toggle('losing-bet', !isOdd && betOdd > 0);
+        document
+          .getElementById('bet-even-container')
+          .classList.toggle('losing-bet', isOdd && betEven > 0);
+        document
+          .getElementById('bet-low-container')
+          .classList.toggle('losing-bet', total > 10 && betLow > 0);
+        document
+          .getElementById('bet-high-container')
+          .classList.toggle('losing-bet', total <= 10 && betHigh > 0);
+
+        // Calculate winnings for odd/even and low/high bets
+        if (isOdd && betOdd) {
+          totalWinnings += betOdd * 2;
+        } else if (!isOdd && betEven) {
+          totalWinnings += betEven * 2;
+        }
+        if (total <= 10 && betLow) {
+          totalWinnings += betLow * 2;
+        } else if (total > 10 && betHigh) {
+          totalWinnings += betHigh * 2;
+        }
+
+        // Evaluate triplet bets
+        for (let i = 1; i <= 6; i++) {
+          const betTriple =
+            parseFloat(document.getElementById(`bet-triple-${i}`).value) || 0;
+          if (betTriple) {
+            if (dice1 === dice2 && dice2 === dice3 && i === dice1) {
+              totalWinnings += betTriple * 216; // High payout for triplets
+              document
+                .getElementById(`triple-${i}-container`)
+                .classList.add('winning-bet');
+            } else {
+              document
+                .getElementById(`triple-${i}-container`)
+                .classList.add('losing-bet');
+            }
+          }
+        }
+
+        // Calculate net winnings or losses
+        const netWinnings = totalWinnings - totalBet;
+        if (netWinnings >= 0) {
+          document.getElementById(
+            'result'
+          ).textContent = `You won $${netWinnings}`;
+        } else {
+          document.getElementById('result').textContent = `You lost $${Math.abs(
+            netWinnings
+          )}.`;
+        }
+
+        // Reset the game after 3 seconds
+        setTimeout(resetBet, 3000);
+      }
+
+      // Reset the game after a round is completed
+      function resetBet() {
+        // Reset the highlight classes for all grid items
+        const betContainers = document.querySelectorAll('.grid-item');
+        betContainers.forEach((container) => {
+          container.classList.remove('winning-bet', 'losing-bet');
+        });
+
+        // Reset all input values to 0
+        const betInputs = document.querySelectorAll('.grid-item input');
+        betInputs.forEach((input) => {
+          input.value = 0;
+        });
+
+        // Clear the result text
+        document.getElementById('result').textContent = '';
+
+        // Reset dice display
+        document.getElementById('dice1').textContent = '-';
+        document.getElementById('dice2').textContent = '-';
+        document.getElementById('dice3').textContent = '-';
+
+        // Re-enable the Roll Dice button
+        document.querySelector('button').disabled = false;
+      }
+
+      // Function to calculate the total bet amount
+      function calculateTotalBet() {
+        let totalBet = 0;
+        for (let i = 4; i <= 17; i++) {
+          totalBet +=
+            parseFloat(document.getElementById(`bet-sum-${i}`).value) || 0;
+        }
+        totalBet += parseFloat(document.getElementById('bet-odd').value) || 0;
+        totalBet += parseFloat(document.getElementById('bet-even').value) || 0;
+        totalBet += parseFloat(document.getElementById('bet-low').value) || 0;
+        totalBet += parseFloat(document.getElementById('bet-high').value) || 0;
+        for (let i = 1; i <= 6; i++) {
+          totalBet +=
+            parseFloat(document.getElementById(`bet-triple-${i}`).value) || 0;
+        }
+        return totalBet;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dice Betting Game</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { background-color: #1a1a1a; color: #fff; }
+    .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .bet-option { border: 1px solid #444; padding: 10px; text-align: center; }
+    .result { font-size: 24px; }
+    .win { background-color: green; }
+    .lose { background-color: red; }
+    #totalBets { color: yellow; }
+</style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="text-center">Dice Betting Game</h1>
+    <div class="bet-grid" id="betOptions"></div>
+    <button class="btn btn-primary mt-3" onclick="rollDice()">Roll Dice</button>
+    <div id="diceResult" class="mt-3 result"></div>
+    <div id="gameResult" class="mt-3"></div>
+    <div id="totalBets">Total Bet: $0</div>
+</div>
+
+<script>
+    const bets = [
+        ...Array.from({length: 14}, (_, i) => i + 4), // Sums from 4 to 17
+        'Odd', 'Even', '≤10', '>10', 'Triplet'
+    ];
+    const odds = { 'Triplet': 216, '≤10': 2, '>10': 2, 'Odd': 2, 'Even': 2, ...bets.slice(0,14).reduce((o, v) => ({...o, [v]: [1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13][v-4] || 18}), {}) };
+    console.log(`odds: ${JSON.stringify(odds)}`)
+    let totalBet = 0, placedBets = {};
+
+    function setupBets() {
+        const grid = document.getElementById('betOptions');
+        bets.forEach(bet => {
+            let div = document.createElement('div');
+            div.className = 'bet-option';
+            div.innerHTML = `${bet} <input type="number" min="0" max="100" value="0" onchange="updateBet('${bet}', this.value)">`;
+            grid.appendChild(div);
+        });
+    }
+
+    function updateBet(bet, amount) {
+        amount = parseInt(amount, 10);
+        if (totalBet + amount <= 100 || amount < 0) {
+            totalBet = totalBet + amount - (placedBets[bet] || 0);
+            placedBets[bet] = amount;
+            document.getElementById('totalBets').textContent = `Total Bet: $${totalBet}`;
+        } else if (amount > 0) {
+            alert("Total bet cannot exceed $100!");
+        }
+    }
+
+    function rollDice() {
+        if (totalBet === 0) return alert("Please place a bet.");
+        let dice = Array.from({length: 3}, () => Math.floor(Math.random() * 6) + 1);
+        let sum = dice.reduce((a, b) => a + b, 0);
+        let result = { dice, sum, isOdd: sum % 2 !== 0, isTriplet: dice[0] === dice[1] && dice[1] === dice[2] };
+        document.getElementById('diceResult').innerHTML = `Dice: ${dice.join(', ')} Sum: ${sum}`;
+        processBets(result);
+    }
+
+    function processBets(result) {
+        let winnings = 0;
+        for (let [bet, amount] of Object.entries(placedBets)) {
+            let win = false;
+            if (bet === 'Odd' && result.isOdd || bet === 'Even' && !result.isOdd || 
+                bet === '≤10' && result.sum <= 10 || bet === '>10' && result.sum > 10 || 
+                bet === 'Triplet' && result.isTriplet || parseInt(bet) === result.sum) {
+                win = true;
+                winnings += amount * odds[bet];
+            }
+            document.querySelector(`[onchange="updateBet('${bet}', this.value)"]`).parentNode.classList.toggle('win', win);
+            document.querySelector(`[onchange="updateBet('${bet}', this.value)"]`).parentNode.classList.toggle('lose', !win);
+        }
+        document.getElementById('gameResult').textContent = `You won: $${winnings - totalBet}`;
+        totalBet = 0;
+        placedBets = {};
+        document.getElementById('totalBets').textContent = `Total Bet: $0`;
+    }
+
+    setupBets();
+</script>
+
+</body>
+</html>
