@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coin Toss Game</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: \#f0f0f0;
+    transition: background-color 0.5s;
+}
+
+.game-container {
+    width: 300px;
+    height: 500px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+    overflow: hidden;
+}
+
+.coin {
+    width: 100px;
+    height: 100px;
+    margin: 20px auto;
+    perspective: 1000px;
+}
+
+.coin div {
+    width: 100\%;
+    height: 100\%;
+    position: absolute;
+    backface-visibility: hidden;
+    background-size: contain;
+}
+
+.heads {
+    background-image: url('heads.png');
+}
+
+.tails {
+    background-image: url('tails.png');
+    transform: rotateY(180deg);
+}
+
+.flip {
+    animation: flip 1s ease-out forwards;
+}
+
+@keyframes flip {
+    from { transform: rotateY(0); }
+    to { transform: rotateY(1800deg); }
+}
+
+button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.stats, .history, .leaderboard {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.leaderboard {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+}
+</style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="leaderboard">
+        <h4>Best Scores</h4>
+        <ol id="bestScores"></ol>
+    </div>
+    <h2>Coin Toss</h2>
+    <div class="coin" id="coin">
+        <div class="heads"></div>
+        <div class="tails"></div>
+    </div>
+    <button onclick="choose('heads')">Heads</button>
+    <button onclick="choose('tails')">Tails</button>
+    <div class="stats">
+        <p>Round: <span id="round">0</span>/10</p>
+        <p>Wins: <span id="wins">0</span></p>
+        <p>Losses: <span id="losses">0</span></p>
+        <p>Win Streak: <span id="streak">0</span></p>
+    </div>
+    <div class="history">
+        <h4>Game History</h4>
+        <ul id="historyList"></ul>
+    </div>
+</div>
+
+<script>
+const coin = document.getElementById('coin');
+const rounds = 10;
+let currentRound = 0, wins = 0, losses = 0, streak = 0, bestScore = 0;
+let history = [];
+const bestScores = JSON.parse(localStorage.getItem('bestScores')) || [];
+
+function choose(side) {
+    if (currentRound >= rounds) return;
+    const result = Math.random() < 0.5 ? 'heads' : 'tails';
+    flipCoin(result);
+    updateGame(side, result);
+    currentRound++;
+}
+
+function flipCoin(result) {
+    coin.firstElementChild.classList.remove('flip');
+    void coin.offsetWidth; // Trigger reflow
+    coin.firstElementChild.classList.add('flip');
+    setTimeout(() => {
+        coin.innerHTML = `<div class="\${result}"></div>`;
+    }, 500);
+}
+
+function updateGame(playerChoice, result) {
+    const win = playerChoice === result;
+    if (win) {
+        wins++;
+        streak++;
+        document.body.style.backgroundColor = '\#e0ffe0';
+    } else {
+        losses++;
+        streak = 0;
+        document.body.style.backgroundColor = '\#ffe0e0';
+    }
+    updateDisplay();
+    history.push({ round: currentRound, choice: playerChoice, result: result, win: win });
+    if (currentRound === rounds) {
+        endGame();
+    }
+}
+
+function updateDisplay() {
+    document.getElementById('round').textContent = currentRound + 1;
+    document.getElementById('wins').textContent = wins;
+    document.getElementById('losses').textContent = losses;
+    document.getElementById('streak').textContent = streak;
+    document.getElementById('historyList').innerHTML = history.map(h => 
+        `<li>\${h.round}: \${h.choice} vs \${h.result} - \${h.win ? 'Win' : 'Loss'}</li>`
+    ).join('');
+}
+
+function endGame() {
+    if (wins > bestScore) bestScore = wins;
+    bestScores.push({score: wins, date: new Date().toLocaleString()});
+    bestScores.sort((a, b) => b.score - a.score).splice(3);
+    localStorage.setItem('bestScores', JSON.stringify(bestScores));
+    updateLeaderboard();
+    alert(`Game Over! Wins: \${wins}, Losses: \${losses}`);
+    setTimeout(resetGame, 1000);
+}
+
+function resetGame() {
+    currentRound = wins = losses = streak = 0;
+    history = [];
+    document.body.style.backgroundColor = '\#f0f0f0';
+    updateDisplay();
+}
+
+function updateLeaderboard() {
+    document.getElementById('bestScores').innerHTML = bestScores.map(s => 
+        `<li>${s.score} - ${s.date}</li>`
+    ).join('');
+}
+
+updateLeaderboard();
+</script>
+</body>
+</html>

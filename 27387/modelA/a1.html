@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Coin Toss Game</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; }
+    \#game-container {
+        width: 600px; 
+        height: 400px; 
+        margin: auto; 
+        border: 2px solid \#000; 
+        padding: 20px;
+        text-align: center;
+    }
+    \#coin {
+        width: 100px;
+        height: 100px;
+        margin: 20px auto;
+        perspective: 1000px;
+    }
+    .face {
+        width: 100\%;
+        height: 100\%;
+        position: absolute;
+        backface-visibility: hidden;
+    }
+    \#heads { background: url('heads.png'); }
+    \#tails { background: url('tails.png'); transform: rotateY(180deg); }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="best-score">Best Score: <span id="score">0</span></div>
+    <h1>Coin Toss Game</h1>
+    <div id="coin"><div id="heads" class="face"></div><div id="tails" class="face"></div></div>
+    <button onclick="choose('heads')">Heads</button>
+    <button onclick="choose('tails')">Tails</button>
+    <div id="stats">Wins: <span id="wins">0</span> | Losses: <span id="losses">0</span> | Streak: <span id="streak">0</span></div>
+    <div id="history">Game History:</div>
+    <div id="leaderboard">Leaderboard:<br></div>
+</div>
+
+<script>
+    const game = {
+        rounds: 10,
+        currentRound: 0,
+        wins: 0,
+        losses: 0,
+        streak: 0,
+        history: [],
+        bestScore: localStorage.getItem('bestScore') || 0,
+        leaderboard: JSON.parse(localStorage.getItem('leaderboard')) || []
+    };
+
+    function updateDisplay() {
+        document.getElementById('wins').textContent = game.wins;
+        document.getElementById('losses').textContent = game.losses;
+        document.getElementById('streak').textContent = game.streak;
+        document.getElementById('score').textContent = game.bestScore;
+        document.getElementById('history').innerHTML = game.history.slice(-10).map(result => result ? 'Win' : 'Loss').join('<br>');
+        updateLeaderboard();
+    }
+
+    function updateLeaderboard() {
+        let board = document.getElementById('leaderboard');
+        game.leaderboard.sort((a, b) => b - a).slice(0, 3).forEach((score, index) => {
+            board.innerHTML += `\${index + 1}. \${score}<br>`;
+        });
+    }
+
+    function choose(choice) {
+        if(game.currentRound >= game.rounds) return;
+        let result = Math.random() < 0.5 ? 'heads' : 'tails';
+        let win = choice === result;
+        animateFlip(result, () => {
+            game.wins += win ? 1 : 0;
+            game.losses += !win ? 1 : 0;
+            game.streak = win ? game.streak + 1 : 0;
+            game.history.push(win);
+            game.currentRound++;
+            document.body.style.backgroundColor = win ? 'lightgreen' : 'lightcoral';
+            updateDisplay();
+
+            if (game.currentRound === game.rounds) {
+                if (game.wins > game.bestScore) {
+                    game.bestScore = game.wins;
+                    localStorage.setItem('bestScore', game.bestScore);
+                    game.leaderboard.push(game.wins);
+                    localStorage.setItem('leaderboard', JSON.stringify(game.leaderboard));
+                }
+                alert(`Game Over! You won \${game.wins} out of \${game.rounds}.`);
+                game.currentRound = 0; // Reset for next game
+                resetGame();
+            }
+        });
+    }
+
+    function animateFlip(result, callback) {
+        let coin = document.getElementById('coin');
+        let rotations = Math.floor(Math.random() * 3) + 5; // Random number of flips
+        coin.style.transition = 'transform 2s';
+        coin.style.transform = `rotateY(\${rotations * 180}deg)`;
+        setTimeout(() => {
+            coin.style.transition = 'none';
+            coin.style.transform = result === 'heads' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+            callback();
+        }, 2000);
+    }
+
+    function resetGame() {
+        game.wins = game.losses = game.streak = 0;
+        game.history = [];
+        updateDisplay();
+    }
+
+    // Initial update
+    updateDisplay();
+</script>
+
+</body>
+</html>

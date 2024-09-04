@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coin Toss Game</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .game-container {
+        text-align: center;
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        min-height: 700px;
+        position: relative;
+      }
+      h1 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+      .coin {
+        width: 100px;
+        height: 100px;
+        margin: 20px auto;
+        perspective: 1000px;
+      }
+      .coin-inner {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transition: transform 3s ease-in-out;
+        transform-style: preserve-3d;
+      }
+      .coin-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        font-size: 2em;
+        overflow: hidden;
+      }
+      .heads {
+        background-color: #3498db;
+        transform: rotateY(0deg);
+      }
+      .tails {
+        background-color: #e74c3c;
+        transform: rotateY(180deg);
+      }
+      .coin img {
+        width: 80px;
+        height: 80px;
+      }
+      button {
+        padding: 10px 20px;
+        font-size: 18px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 10px;
+      }
+      #heads {
+        background-color: #3498db;
+        color: white;
+      }
+      #tails {
+        background-color: #e74c3c;
+        color: white;
+      }
+      #result {
+        font-size: 24px;
+        margin-top: 20px;
+        color: #555;
+        min-height: 40px;
+      }
+      #game-history {
+        margin-top: 20px;
+        font-size: 18px;
+        text-align: left;
+      }
+      #score {
+        font-size: 20px;
+        margin-top: 20px;
+        color: #28a745;
+      }
+      .score-container {
+        font-size: 18px;
+        color: #333;
+        margin-top: 20px;
+      }
+      #best-score {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 18px;
+        color: #ff9800;
+      }
+      #leaderboard {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+      .fixed-size {
+        min-height: 720px;
+        min-width: 400px;
+        max-width: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container fixed-size">
+      <h1>Coin Toss Game</h1>
+      <div id="best-score">
+        Best Score: <span id="best-score-value">0</span>
+      </div>
+      <div class="coin" id="coin">
+        <div class="coin-inner" id="coin-inner">
+          <div class="coin-face heads">
+            <img
+              src="https://cdn.iconscout.com/icon/premium/png-512-thumb/rupee-10324724-8364191.png?f=webp&w=512"
+              alt="Heads"
+            />
+          </div>
+          <div class="coin-face tails">
+            <img
+              src="https://cdn.iconscout.com/icon/premium/png-512-thumb/rupee-10324603-8364101.png?f=webp&w=512"
+              alt="Tails"
+            />
+          </div>
+        </div>
+      </div>
+      <div>
+        <button id="heads" onclick="tossCoin('Heads')">Heads</button>
+        <button id="tails" onclick="tossCoin('Tails')">Tails</button>
+      </div>
+      <div id="result"></div>
+      <div class="score-container">
+        Total Wins: <span id="total-wins">0</span> | Total Losses:
+        <span id="total-losses">0</span>
+        <div>Current Streak: <span id="streak">0</span></div>
+      </div>
+      <div id="game-history">
+        <h3>Game History (Last 10 Turns):</h3>
+        <ul id="history-list"></ul>
+      </div>
+      <div id="leaderboard">
+        <h3>Leaderboard</h3>
+        <ul id="leaderboard-list"></ul>
+      </div>
+      <div id="score"></div>
+    </div>
+
+    <script>
+      let gameHistory = [];
+      let totalGames = 0;
+      let wins = 0;
+      let losses = 0;
+      let bestScore = 0;
+      let streak = 0;
+      let leaderboard = [];
+
+      function tossCoin(userGuess) {
+        const outcomes = ['Heads', 'Tails'];
+        const result = outcomes[Math.floor(Math.random() * outcomes.length)];
+        const coinInner = document.getElementById('coin-inner');
+
+        // Reset animation by removing transform class
+        coinInner.style.transition = 'none';
+        coinInner.style.transform = 'rotateY(0deg)';
+
+        setTimeout(() => {
+          // Re-enable animation and apply the transform
+          coinInner.style.transition = 'transform 3s ease-in-out';
+          coinInner.style.transform = `rotateY(${
+            result === 'Heads' ? 3600 : 3780
+          }deg)`;
+        }, 100); // Adding a small delay to reset the animation
+
+        // Reset result message
+        document.getElementById('result').textContent = '';
+
+        // Display result after the animation ends
+        setTimeout(() => {
+          const outcomeMessage =
+            result === userGuess
+              ? `🎉 You guessed ${userGuess} and it was ${result}. You win!`
+              : `😞 You guessed ${userGuess} but it was ${result}. Try again!`;
+
+          // Update background color for visual feedback
+          document.body.style.backgroundColor =
+            result === userGuess ? '#d4edda' : '#f8d7da';
+
+          document.getElementById('result').textContent = outcomeMessage;
+
+          // Track wins, losses, and streak
+          if (result === userGuess) {
+            wins++;
+            streak++;
+          } else {
+            losses++;
+            streak = 0; // Reset streak on a loss
+          }
+
+          // Update total score and streak
+          document.getElementById('total-wins').textContent = wins;
+          document.getElementById('total-losses').textContent = losses;
+          document.getElementById('streak').textContent = streak;
+
+          // Add result to game history
+          updateGameHistory(result === userGuess ? 'Win' : 'Lose');
+
+          totalGames++;
+          if (totalGames >= 10) {
+            displayFinalScore();
+          }
+        }, 3000);
+      }
+
+      function updateGameHistory(result) {
+        gameHistory.push(result);
+        if (gameHistory.length > 10) {
+          gameHistory.shift(); // Keep only the last 10 results
+        }
+
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = ''; // Clear previous history
+        gameHistory.forEach((entry, index) => {
+          const listItem = document.createElement('li');
+          listItem.textContent = `Game ${index + 1}: ${entry}`;
+          historyList.appendChild(listItem);
+        });
+      }
+
+      function displayFinalScore() {
+        const scoreDiv = document.getElementById('score');
+        const totalScore = `Final Score after 10 games: Wins = ${wins}, Losses = ${losses}`;
+
+        // Show current game score in an alert
+        alert(totalScore);
+
+        // Display the score in the page
+        scoreDiv.textContent = totalScore;
+
+        // Update best score if current wins are higher
+        if (wins > bestScore) {
+          bestScore = wins;
+          document.getElementById('best-score-value').textContent = bestScore;
+        }
+
+        // Add score to leaderboard
+        leaderboard.push(wins);
+        leaderboard.sort((a, b) => b - a);
+        updateLeaderboard();
+
+        // Reset the game for next round
+        resetGame();
+      }
+
+      function updateLeaderboard() {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        leaderboardList.innerHTML = ''; // Clear previous leaderboard
+        leaderboard.slice(0, 3).forEach((score, index) => {
+          const listItem = document.createElement('li');
+          listItem.textContent = `Rank ${index + 1}: ${score} Wins`;
+          leaderboardList.appendChild(listItem);
+        });
+      }
+
+      function resetGame() {
+        gameHistory = [];
+        totalGames = 0;
+        wins = 0;
+        losses = 0;
+        streak = 0;
+        document.getElementById('history-list').innerHTML = '';
+        document.getElementById('score').textContent = '';
+        document.getElementById('total-wins').textContent = wins;
+        document.getElementById('total-losses').textContent = losses;
+        document.getElementById('streak').textContent = streak;
+        document.body.style.backgroundColor = '#f4f4f4'; // Reset background color
+      }
+    </script>
+  </body>
+</html>
