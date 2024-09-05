@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Scramble Game</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body { font-family: 'Arial', sans-serif; }
+    .game-container { margin-top: 50px; }
+    .scrambled-word { font-size: 2em; letter-spacing: 5px; }
+    .timer { font-size: 1.5em; color: #dc3545; }
+    .streak { font-size: 1.2em; color: #28a745; }
+    .btn, .form-control { margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="container game-container">
+    <h1>Word Scramble</h1>
+    <select id="difficulty" class="form-control">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+    <div class="scrambled-word" id="scrambledWord"></div>
+    <div class="timer" id="timer">30</div>
+    <div class="streak">Streak: <span id="streakCount">0</span></div>
+    <input type="text" id="guess" class="form-control" placeholder="Enter your guess">
+    <button id="submit" class="btn btn-primary">Submit Guess</button>
+    <button id="nextWord" class="btn btn-secondary" disabled>Next Word</button>
+    <div id="message"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let currentWord = '';
+    let timer;
+    let streak = 0;
+    const apiUrl = 'https://random-word-api.herokuapp.com/word?number=1&difficulty=';
+    
+    function fetchWord(difficulty) {
+        fetch(apiUrl + difficulty)
+        .then(response => response.json())
+        .then(data => {
+            currentWord = data[0];
+            startGame(currentWord);
+        });
+    }
+
+    function startGame(word) {
+        document.getElementById('scrambledWord').innerText = scrambleWord(word);
+        document.getElementById('message').innerText = '';
+        startTimer();
+        document.getElementById('submit').disabled = false;
+        document.getElementById('nextWord').disabled = true;
+    }
+
+    function scrambleWord(word) {
+        return word.split('').sort(() => 0.5 - Math.random()).join('');
+    }
+
+    function startTimer() {
+        let timeLeft = 30;
+        const timerElement = document.getElementById('timer');
+        timerElement.innerText = timeLeft;
+        timer = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                gameOver(false);
+            } else {
+                timeLeft--;
+                timerElement.innerText = timeLeft;
+            }
+        }, 1000);
+    }
+
+    function gameOver(isCorrect) {
+        clearInterval(timer);
+        document.getElementById('submit').disabled = true;
+        document.getElementById('nextWord').disabled = false;
+        if (!isCorrect) {
+            document.getElementById('message').innerText = `Time's up! The word was: \${currentWord}`;
+        }
+    }
+
+    document.getElementById('difficulty').addEventListener('change', function() {
+        streak = 0;
+        updateStreak();
+        fetchWord(this.value);
+    });
+
+    document.getElementById('submit').addEventListener('click', function() {
+        const guess = document.getElementById('guess').value.toLowerCase();
+        if (guess === currentWord.toLowerCase()) {
+            gameOver(true);
+            streak++;
+            updateStreak();
+            document.getElementById('message').innerText = "Correct!";
+        } else {
+            gameOver(false);
+            document.getElementById('message').innerText = `Incorrect! The word was: \${currentWord}`;
+        }
+    });
+
+    document.getElementById('nextWord').addEventListener('click', () => fetchWord(document.getElementById('difficulty').value));
+
+    function updateStreak() {
+        document.getElementById('streakCount').innerText = streak;
+    }
+
+    // Initial fetch
+    fetchWord('easy');
+});
+</script>
+
+</body>
+</html>

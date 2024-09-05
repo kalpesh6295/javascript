@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Scramble Game</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f0f8ff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .game-container {
+        text-align: center;
+        background-color: white;
+        padding: 30px;
+        max-width: 90%;
+        width: 600px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+      }
+
+      .scrambled-word {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #2980b9;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      .button-row {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 12px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: #3498db;
+        color: white;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      #message {
+        font-size: 18px;
+        margin-top: 10px;
+      }
+
+      .success {
+        color: #2ecc71;
+      }
+
+      .error {
+        color: #e74c3c;
+      }
+
+      #timer {
+        font-size: 20px;
+        margin-top: 10px;
+      }
+
+      #streak {
+        font-size: 16px;
+        color: #34495e;
+        margin-top: 10px;
+      }
+
+      .difficulty-container {
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Word Scramble Game</h1>
+
+      <!-- Difficulty Selection -->
+      <div class="difficulty-container">
+        <label for="difficulty">Select Difficulty: </label>
+        <select
+          id="difficulty"
+          class="form-select"
+          style="width: 200px; margin: 0 auto"
+        >
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+
+      <!-- Display Scrambled Word -->
+      <div class="scrambled-word" id="scrambled-word">Loading...</div>
+
+      <!-- Input for User Guess -->
+      <div class="input-group">
+        <input
+          type="text"
+          id="guess"
+          class="form-control"
+          placeholder="Your guess"
+        />
+      </div>
+
+      <!-- Buttons Row -->
+      <div class="button-row">
+        <button id="submit-btn" onclick="checkGuess()">Submit Guess</button>
+        <button id="next-word-btn" onclick="nextWord()" disabled>
+          Next Word
+        </button>
+      </div>
+
+      <!-- Timer Display -->
+      <div id="timer">Time: <span id="time">30</span> seconds</div>
+
+      <!-- Streak Counter -->
+      <div id="streak">Streak: <span id="streak-count">0</span></div>
+
+      <!-- Message Display -->
+      <div id="message"></div>
+    </div>
+
+    <script>
+      let currentWord = '';
+      let scrambledWord = '';
+      let timerInterval;
+      let time = 30;
+      let streak = 0;
+      let easyWords = [];
+      let mediumWords = [];
+      let hardWords = [];
+      let currentWordsList = [];
+
+      const apiUrl = 'https://api.datamuse.com/words?sp=';
+
+      // Fetch words dynamically based on difficulty
+      async function fetchWords(difficulty) {
+        let wordLength;
+
+        if (difficulty === 'easy') {
+          wordLength = '????';
+        } else if (difficulty === 'medium') {
+          wordLength = '?????';
+        } else {
+          wordLength = '??????';
+        }
+
+        try {
+          const response = await fetch(`${apiUrl}${wordLength}&max=100`);
+          const data = await response.json();
+          if (difficulty === 'easy') {
+            easyWords = data.map((item) => item.word);
+          } else if (difficulty === 'medium') {
+            mediumWords = data.map((item) => item.word);
+          } else {
+            hardWords = data.map((item) => item.word);
+          }
+          getNextWord(difficulty);
+        } catch (error) {
+          console.error('Error fetching words:', error);
+          document.getElementById('message').textContent =
+            'Error fetching words!';
+        }
+      }
+
+      // Scramble the word by shuffling its letters
+      function scrambleWord(word) {
+        const scrambledArray = word.split('').sort(() => 0.5 - Math.random());
+        return scrambledArray.join('');
+      }
+
+      // Start the countdown timer
+      function startTimer() {
+        clearInterval(timerInterval);
+        time = 30;
+        document.getElementById('time').textContent = time;
+        timerInterval = setInterval(() => {
+          time--;
+          document.getElementById('time').textContent = time;
+
+          if (time <= 0) {
+            clearInterval(timerInterval);
+            endGame(false);
+          }
+        }, 1000);
+      }
+
+      // Stop the countdown timer
+      function stopTimer() {
+        clearInterval(timerInterval);
+      }
+
+      // Function to pick a random word and scramble it
+      function getNextWord(difficulty) {
+        if (difficulty === 'easy') {
+          currentWordsList = easyWords;
+        } else if (difficulty === 'medium') {
+          currentWordsList = mediumWords;
+        } else {
+          currentWordsList = hardWords;
+        }
+
+        currentWord =
+          currentWordsList[Math.floor(Math.random() * currentWordsList.length)];
+        scrambledWord = scrambleWord(currentWord);
+        document.getElementById('scrambled-word').textContent = scrambledWord;
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('next-word-btn').disabled = true;
+        startTimer();
+      }
+
+      // Check player's guess
+      function checkGuess() {
+        const playerGuess = document
+          .getElementById('guess')
+          .value.toLowerCase();
+
+        if (playerGuess === currentWord) {
+          endGame(true);
+        } else {
+          document.getElementById('message').textContent =
+            'Incorrect! Try again!';
+          document.getElementById('message').classList.add('error');
+          document.getElementById('message').classList.remove('success');
+
+          // Keep submit button enabled for retrying after incorrect guess
+          document.getElementById('submit-btn').disabled = false;
+        }
+      }
+
+      // End the game and show result
+      function endGame(isCorrect) {
+        stopTimer();
+        document.getElementById('submit-btn').disabled = true;
+        document.getElementById('next-word-btn').disabled = false;
+
+        if (isCorrect) {
+          streak++;
+          document.getElementById('message').textContent = 'Correct! 🎉';
+          document.getElementById('message').classList.add('success');
+          document.getElementById('message').classList.remove('error');
+        } else {
+          streak = 0;
+          document.getElementById(
+            'message'
+          ).textContent = `Time's up! The word was "${currentWord}". 😔`;
+          document.getElementById('message').classList.add('error');
+          document.getElementById('message').classList.remove('success');
+        }
+
+        document.getElementById('streak-count').textContent = streak;
+      }
+
+      // Reset for the next word
+      function nextWord() {
+        document.getElementById('guess').value = '';
+        document.getElementById('message').textContent = '';
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('next-word-btn').disabled = true;
+        stopTimer();
+
+        const difficulty = document.getElementById('difficulty').value;
+        getNextWord(difficulty);
+      }
+
+      // Fetch words for the default difficulty level (easy) when the game starts
+      fetchWords('easy');
+
+      // Update game when the difficulty level is changed
+      document
+        .getElementById('difficulty')
+        .addEventListener('change', function () {
+          const difficulty = this.value;
+          fetchWords(difficulty);
+        });
+    </script>
+  </body>
+</html>
