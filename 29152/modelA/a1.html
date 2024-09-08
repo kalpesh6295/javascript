@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette Game</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .roulette-wheel {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #ff0000 0deg, #ff0000 20deg, 
+                #000000 20deg, #000000 40deg,
+                #ff0000 40deg, #ff0000 60deg,
+                #000000 60deg, #000000 80deg,
+                #ff0000 80deg, #ff0000 100deg,
+                #000000 100deg, #000000 120deg,
+                #ff0000 120deg, #ff0000 140deg,
+                #000000 140deg, #000000 160deg,
+                #ff0000 160deg, #ff0000 180deg,
+                #000000 180deg, #000000 360deg
+            );
+            position: relative;
+            margin: 20px auto;
+            transform: rotate(0deg);
+            transition: transform 5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .pointer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0; 
+            height: 0; 
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 20px solid white;
+            transform: translate(-50%, -100%);
+        }
+        .bet-button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col text-right"><h4>Balance: $<span id="balance">1000</span></h4></div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-4">
+            <div class="roulette-wheel"><div class="pointer"></div></div>
+            <button class="btn btn-primary" onclick="spinWheel()">Spin</button>
+        </div>
+        <div class="col-4">
+            <div id="betOptions"></div>
+            <h5>Winning Number: <span id="winningNumber"></span></h5>
+        </div>
+    </div>
+</div>
+
+<script>
+    let balance = 1000;
+    let currentBet = 0;
+    const wheel = document.querySelector('.roulette-wheel');
+
+    function placeBet(betType, amount) {
+        if (balance >= amount) {
+            balance -= amount;
+            currentBet += amount;
+            document.getElementById('balance').textContent = balance;
+        } else {
+            alert('Not enough balance!');
+        }
+    }
+
+    function spinWheel() {
+        if (currentBet === 0) {
+            alert('Place a bet first!');
+            return;
+        }
+        let degrees = Math.floor(Math.random() * 360) + 720; // Minimum 2 full rotations
+        wheel.style.transform = `rotate(${degrees}deg)`;
+        setTimeout(() => {
+            const result = (degrees % 360) / 20; // Since we have 18 segments, each 20 degrees
+            const winNumber = Math.ceil(result);
+            document.getElementById('winningNumber').textContent = winNumber;
+            checkWin(winNumber);
+        }, 5000);
+    }
+
+    function checkWin(number) {
+        // Simplified win check - actual logic would be more complex
+        const won = Math.random() < 0.5; // Placeholder for actual bet checking logic
+        if (won) {
+            balance += currentBet * 2; // Assuming 2:1 for simplicity
+        }
+        currentBet = 0;
+        document.getElementById('balance').textContent = balance;
+    }
+
+    // Setup bet buttons (this would be dynamically generated in a real scenario)
+    const bets = ['1-6', '7-12', '13-18', 'Odd', 'Even'];
+    bets.forEach(bet => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary bet-button';
+        btn.textContent = bet;
+        btn.onclick = function() { placeBet(bet, 10); }; // Bet $10
+        document.getElementById('betOptions').appendChild(btn);
+    });
+</script>
+
+</body>
+</html>

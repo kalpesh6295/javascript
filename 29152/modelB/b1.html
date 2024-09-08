@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roulette Game</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .wheel {
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: conic-gradient(
+            red, black, red, black, red, black, red, black, red, black, 
+            red, black, red, black, red, black, red, black
+        );
+        position: relative;
+        margin: auto;
+        transition: transform 5s cubic-bezier(.25,.1,.25,1);
+    }
+    .wheel div {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        margin: -10px 0 0 -10px;
+    }
+    .wheel span {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        color: white;
+        transform-origin: center;
+        font-size: 12px;
+    }
+    .bet-table {
+        margin-top: 20px;
+    }
+    .spin-button {
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col text-right">
+            <h5>Balance: $<span id="balance">1000</span></h5>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="wheel" id="rouletteWheel">
+            <!-- Numbers will be dynamically added here -->
+        </div>
+    </div>
+    <div class="row mt-4 justify-content-center">
+        <div class="col-md-8 bet-table">
+            <button class="btn btn-primary" onclick="placeBet('odd')">Odd</button>
+            <button class="btn btn-primary" onclick="placeBet('even')">Even</button>
+            <button class="btn btn-secondary" onclick="placeBet('1-6')">1-6</button>
+            <button class="btn btn-secondary" onclick="placeBet('7-12')">7-12</button>
+            <button class="btn btn-secondary" onclick="placeBet('13-18')">13-18</button>
+            <div id="numberBets" class="mt-2"></div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <button class="btn btn-success spin-button" onclick="spinWheel()">Spin</button>
+    </div>
+    <div class="row mt-3 justify-content-center">
+        <h4 id="result">Place your bets!</h4>
+    </div>
+</div>
+
+<script>
+    const wheel = document.getElementById('rouletteWheel');
+    const balanceElement = document.getElementById('balance');
+    const resultElement = document.getElementById('result');
+    let balance = 1000;
+    let currentBet = 0;
+    let betType = '';
+
+    // Setup wheel numbers
+    for(let i = 1; i <= 18; i++) {
+        let span = document.createElement('span');
+        span.style.transform = `rotate(${i * 20 - 10}deg)`;
+        span.innerText = i;
+        wheel.appendChild(span);
+    }
+
+    // Create number betting options
+    const numberBets = document.getElementById('numberBets');
+    for(let i = 1; i <= 18; i++) {
+        let btn = document.createElement('button');
+        btn.className = 'btn btn-info m-1';
+        btn.innerText = i;
+        btn.onclick = () => placeBet(i);
+        numberBets.appendChild(btn);
+    }
+
+    function placeBet(type) {
+        if (balance > 0) {
+            currentBet = 10; // Fixed bet for simplicity
+            balance -= currentBet;
+            betType = type;
+            updateBalance();
+        } else {
+            alert("You're out of money!");
+        }
+    }
+
+    function spinWheel() {
+        if(currentBet === 0) return alert("Please place a bet first!");
+        let degrees = Math.floor(Math.random() * 3600) + 360; // Multiple rotations plus a random stop
+        wheel.style.transform = `rotate(${degrees}deg)`;
+        setTimeout(() => {
+            let result = (degrees % 360) / 20; // Since each segment is 20 degrees
+            result = Math.ceil(result) % 18 + 1; // Ensure it's between 1-18
+            checkWin(result);
+        }, 5000); // Match the transition time
+    }
+
+    function checkWin(number) {
+        let color = number % 2 === 0 ? 'Red' : 'Black';
+        let win = false;
+        let multiplier = 1;
+
+        if (betType === number) { win = true; multiplier = 18; }
+        else if (betType === 'odd' && number % 2 !== 0) { win = true; multiplier = 2; }
+        else if (betType === 'even' && number % 2 === 0) { win = true; multiplier = 2; }
+        else {
+            let ranges = {'1-6': [1,6], '7-12': [7,12], '13-18': [13,18]};
+            if (ranges[betType] && number >= ranges[betType][0] && number <= ranges[betType][1]) {
+                win = true; multiplier = 3;
+            }
+        }
+
+        let winnings = win ? currentBet * multiplier : 0;
+        balance += winnings;
+        updateBalance();
+        resultElement.innerHTML = `The ball landed on ${number} ${color}! ${win ? 'You win $' + winnings : 'You lose'}.`;
+    }
+
+    function updateBalance() {
+        balanceElement.innerText = balance;
+    }
+</script>
+</body>
+</html>
