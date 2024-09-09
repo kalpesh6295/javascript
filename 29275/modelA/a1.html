@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Typing Speed Test</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <style>
+      body {
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      #wordDisplay {
+        font-size: 24px;
+        margin: 20px 0;
+      }
+      #difficulty {
+        margin-bottom: 10px;
+      }
+      #timer,
+      #score,
+      #bestScore {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Typing Speed Game</h1>
+      <select id="difficulty" class="form-control">
+        <option value="easy">Easy (3-4 letters)</option>
+        <option value="medium">Medium (5-6 letters)</option>
+        <option value="hard">Hard (6-7 letters)</option>
+      </select>
+      <button id="startGame" class="btn btn-primary">Start Game</button>
+      <div id="wordDisplay"></div>
+      <input type="text" id="wordInput" class="form-control" disabled />
+      <p>Time left: <span id="timer">60</span>s</p>
+      <p>Score: <span id="score">0</span></p>
+      <p>Best Score: <span id="bestScore">0</span></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        const apiUrl =
+          'https://random-word-api.herokuapp.com/word?number=1&length=';
+        let words = [];
+        let currentWordIndex = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function fetchWord(length) {
+          $.get(apiUrl + length, function (data) {
+            words = data;
+            currentWordIndex = 0;
+            $('#wordDisplay').text(words[currentWordIndex]);
+          });
+        }
+
+        $('#startGame').on('click', function () {
+          const difficulty = $('#difficulty').val();
+          const wordLength = { easy: '3-4', medium: '5-6', hard: '6-7' }[
+            difficulty
+          ];
+          fetchWord(wordLength);
+          $('#wordInput').prop('disabled', false).focus();
+          score = 0;
+          $('#score').text(score);
+          timeLeft = 60;
+          clearInterval(timer);
+          timer = setInterval(updateTimer, 1000);
+        });
+
+        function updateTimer() {
+          timeLeft--;
+          $('#timer').text(timeLeft);
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            $('#wordInput').prop('disabled', true);
+            updateBestScore();
+          }
+        }
+
+        function updateBestScore() {
+          const difficulty = $('#difficulty').val();
+          let bestScore = localStorage.getItem(`bestScore_${difficulty}`) || 0;
+          if (score > parseInt(bestScore, 10)) {
+            localStorage.setItem(`bestScore_${difficulty}`, score);
+            bestScore = score;
+          }
+          $('#bestScore').text(bestScore);
+        }
+
+        $('#wordInput').on('input', function () {
+          if (
+            $(this).val().toLowerCase() ===
+            words[currentWordIndex].toLowerCase()
+          ) {
+            score++;
+            $('#score').text(score);
+            currentWordIndex++;
+            if (currentWordIndex < words.length) {
+              $('#wordDisplay').text(words[currentWordIndex]);
+            } else {
+              // If out of words, fetch more or end game
+              $('#wordDisplay').text('Well done!');
+            }
+            $(this).val('');
+          }
+        });
+
+        // Initialize best scores
+        $('#difficulty')
+          .change(function () {
+            const bestScore =
+              localStorage.getItem(`bestScore_${$(this).val()}`) || 0;
+            $('#bestScore').text(bestScore);
+          })
+          .change();
+      });
+    </script>
+  </body>
+</html>
