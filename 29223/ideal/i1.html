@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Search</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body,
+      h1 {
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        text-transform: uppercase;
+        text-align: center;
+        margin-top: 20px;
+        color: #fff;
+        text-shadow: 2px 2px 5px #000;
+      }
+
+      body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(45deg, #6a11cb, #2575fc);
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 0;
+        text-align: center;
+        position: relative;
+      }
+
+      .game-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      .ws-area {
+        background: #f7f9fb;
+        padding: 20px;
+        border-radius: 10px;
+        border: 3px solid #2d98da;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+      }
+
+      .ws-row {
+        display: flex;
+        justify-content: center;
+      }
+
+      .ws-col {
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 2px;
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        user-select: none;
+        color: #2d3436;
+        transition: background-color 0.3s, transform 0.2s;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .ws-col:hover {
+        background-color: #74b9ff;
+        transform: scale(1.1);
+      }
+
+      .ws-col.ws-selected {
+        background: #ffeaa7;
+      }
+
+      .ws-col.ws-found {
+        background-color: #00b894;
+        color: #fff;
+      }
+
+      /* Centered Dropdown */
+      .custom-dropdown {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .custom-dropdown select {
+        width: 200px;
+        padding: 10px;
+        border-radius: 30px;
+        border: 2px solid #00cec9;
+        background: #ffffff;
+        color: #2d3436;
+        font-weight: bold;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        outline: none;
+        transition: all 0.3s ease;
+      }
+
+      .custom-dropdown select:focus {
+        border-color: #74b9ff;
+      }
+
+      /* Styling the word list */
+      .ws-words {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #dfe6e9;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        list-style: none;
+        text-align: left;
+        width: 200px;
+      }
+
+      .ws-word {
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        background-color: #ffffff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #2d3436;
+        transition: background-color 0.3s ease;
+      }
+
+      .ws-word:hover {
+        background-color: #f8f9fa;
+      }
+
+      .ws-word.found {
+        text-decoration: line-through;
+        background-color: #00b894;
+        color: white;
+      }
+
+      /* Countdown timer */
+      .timer {
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 20px;
+        text-shadow: 2px 2px 5px #000;
+      }
+
+      .best-time {
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1 class="header">Word Search</h1>
+
+      <!-- Centered Difficulty Dropdown -->
+      <div class="custom-dropdown">
+        <label for="difficulty" class="me-3">Select Difficulty:</label>
+        <select id="difficulty-selector" class="form-select mx-auto">
+          <option value="4">Easy (4-letter words)</option>
+          <option value="5">Medium (5-letter words)</option>
+          <option value="6">Hard (6-letter words)</option>
+        </select>
+      </div>
+
+      <div class="timer">Time left: <span id="timer">120</span></div>
+      <div class="best-time">Best time: <span id="best-time">N/A</span></div>
+
+      <!-- Game Container (Flexbox Layout for Grid and Word List) -->
+      <div class="game-container">
+        <div id="ws-area"></div>
+        <ul class="ws-words"></ul>
+      </div>
+
+      <button
+        id="restart-btn"
+        class="btn btn-primary mt-3"
+        style="display: none"
+      >
+        Restart Game
+      </button>
+    </div>
+
+    <!-- Modal for Congratulations -->
+    <div
+      class="modal fade"
+      id="congratulationsModal"
+      tabindex="-1"
+      aria-labelledby="congratulationsLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div
+          class="modal-content"
+          style="
+            background-color: white;
+            color: black;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+          "
+        >
+          <div class="modal-header" style="border-bottom: 1px solid #ddd">
+            <h5
+              class="modal-title"
+              id="congratulationsLabel"
+              style="color: black"
+            >
+              🎉 Congratulations! 🎉
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              style="color: black"
+            ></button>
+          </div>
+          <div
+            class="modal-body"
+            style="font-size: 18px; line-height: 1.5; padding: 20px"
+          >
+            <p style="color: black">You've found all the words!</p>
+            <p style="color: black">
+              Your Time:
+              <span id="final-time" style="font-weight: bold"></span>s
+            </p>
+            <p style="color: black">
+              Best Time:
+              <span id="modal-best-time" style="font-weight: bold"></span>s
+            </p>
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid #ddd">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              style="color: white; background-color: #6c757d"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+              id="restart-modal-btn"
+              style="color: white; background-color: #007bff"
+            >
+              Play Again
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const apiBase = 'https://api.datamuse.com/words?sp=';
+      const maxWords = 100;
+      let countdownInterval;
+      let gameTime = 120; // Total time in seconds
+      let timeRemaining;
+      let bestTime = localStorage.getItem('bestTime') || 'N/A';
+
+      document.getElementById('best-time').textContent = bestTime;
+
+      // Fetches words from the Datamuse API based on difficulty (word length).
+      function fetchWords(difficulty) {
+        const wordLength = '?'.repeat(difficulty);
+        const url = `${apiBase}${wordLength}&max=${maxWords}`;
+
+        return fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            const words = data
+              .map((item) => item.word.toUpperCase())
+              .filter((word) => word.length === difficulty);
+            return selectRandomWords(words, 10);
+          })
+          .catch((error) => {
+            console.error('Error fetching words:', error);
+            return ['ERROR']; // Fallback word if there's an issue
+          });
+      }
+
+      // Selects a random subset of words from the provided list.
+      function selectRandomWords(words, count) {
+        const shuffled = words.sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+      }
+
+      // Random integer generator for use in word placement.
+      Math.rangeInt = function (min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      };
+
+      // Word search game prototype that initializes the game board.
+      Element.prototype.wordSearch = function (settings) {
+        return new WordSearch(this, settings);
+      };
+
+      // WordSearch constructor to create a new game.
+      function WordSearch(wrapEl, settings) {
+        this.wrapEl = wrapEl;
+        this.wrapEl.classList.add('ws-area');
+        this.solved = 0;
+        this.selectedCells = [];
+
+        const defaultSettings = {
+          directions: ['W', 'N'],
+          gridSize: 10,
+          words: [],
+          debug: false,
+        };
+        this.settings = Object.assign({}, defaultSettings, settings);
+
+        this.parseWords(this.settings.gridSize);
+        this.initialize();
+        this.addWords();
+        if (!this.settings.debug) this.fillBlanks();
+        this.drawGrid();
+        this.addEventListeners();
+      }
+
+      // Ensures all words are uppercase and fit within the grid.
+      WordSearch.prototype.parseWords = function (maxSize) {
+        for (let i = 0; i < this.settings.words.length; i++) {
+          this.settings.words[i] = this.settings.words[i].toUpperCase();
+          if (this.settings.words[i].length > maxSize) {
+            alert('Word is too long for the grid');
+            return false;
+          }
+        }
+        return true;
+      };
+
+      // Initializes the game matrix (grid) with empty cells.
+      WordSearch.prototype.initialize = function () {
+        this.matrix = Array.from({ length: this.settings.gridSize }, () =>
+          Array(this.settings.gridSize).fill('.')
+        );
+      };
+
+      // Attempts to place each word in the grid randomly until all are placed.
+      WordSearch.prototype.addWords = function () {
+        this.settings.words.forEach((word) => {
+          let placed = false;
+          while (!placed) {
+            const dir =
+              this.settings.directions[
+                Math.rangeInt(0, this.settings.directions.length - 1)
+              ];
+            let row = Math.rangeInt(
+              0,
+              this.settings.gridSize - (dir === 'N' ? word.length : 1)
+            );
+            let col = Math.rangeInt(
+              0,
+              this.settings.gridSize - (dir === 'W' ? word.length : 1)
+            );
+
+            if (this.canPlaceWord(word, row, col, dir)) {
+              this.placeWord(word, row, col, dir);
+              placed = true;
+            }
+          }
+        });
+      };
+
+      // Checks if a word can be placed in the grid at the given position and direction.
+      WordSearch.prototype.canPlaceWord = function (word, row, col, direction) {
+        if (direction === 'W') {
+          for (let i = 0; i < word.length; i++) {
+            if (this.matrix[row][col + i] !== '.') return false;
+          }
+        } else if (direction === 'N') {
+          for (let i = 0; i < word.length; i++) {
+            if (this.matrix[row + i][col] !== '.') return false;
+          }
+        }
+        return true;
+      };
+
+      // Places the word in the grid at the given position and direction.
+      WordSearch.prototype.placeWord = function (word, row, col, direction) {
+        if (direction === 'W') {
+          for (let i = 0; i < word.length; i++) {
+            this.matrix[row][col + i] = word[i];
+          }
+        } else if (direction === 'N') {
+          for (let i = 0; i < word.length; i++) {
+            this.matrix[row + i][col] = word[i];
+          }
+        }
+      };
+
+      // Fills any remaining empty cells in the grid with random letters.
+      WordSearch.prototype.fillBlanks = function () {
+        for (let row = 0; row < this.settings.gridSize; row++) {
+          for (let col = 0; col < this.settings.gridSize; col++) {
+            if (this.matrix[row][col] === '.') {
+              this.matrix[row][col] = String.fromCharCode(
+                Math.rangeInt(65, 90)
+              );
+            }
+          }
+        }
+      };
+
+      // Renders the word search grid in the HTML element.
+      WordSearch.prototype.drawGrid = function () {
+        this.wrapEl.innerHTML = ''; // Clear previous grid if any
+        this.matrix.forEach((row, rowIndex) => {
+          const rowDiv = document.createElement('div');
+          rowDiv.classList.add('ws-row');
+          row.forEach((letter, colIndex) => {
+            const letterDiv = document.createElement('div');
+            letterDiv.classList.add('ws-col');
+            letterDiv.textContent = letter;
+            letterDiv.dataset.row = rowIndex;
+            letterDiv.dataset.col = colIndex;
+            rowDiv.appendChild(letterDiv);
+          });
+          this.wrapEl.appendChild(rowDiv);
+        });
+      };
+
+      // Adds event listeners for grid cell selection and word checking.
+      WordSearch.prototype.addEventListeners = function () {
+        const gridCells = document.querySelectorAll('.ws-col');
+        let isMouseDown = false;
+
+        gridCells.forEach((cell) => {
+          cell.addEventListener('mousedown', () => {
+            isMouseDown = true;
+            this.selectCell(cell);
+          });
+
+          cell.addEventListener('mouseover', () => {
+            if (isMouseDown) {
+              this.selectCell(cell);
+            }
+          });
+
+          cell.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            this.checkWord();
+            this.clearSelection();
+          });
+        });
+
+        document.body.addEventListener('mouseup', () => {
+          isMouseDown = false;
+          this.checkWord();
+          this.clearSelection();
+        });
+      };
+
+      // Marks a grid cell as selected when the user clicks or drags over it.
+      WordSearch.prototype.selectCell = function (cell) {
+        cell.classList.add('ws-selected');
+        this.selectedCells.push(cell);
+      };
+
+      // Checks if the selected cells form a valid word and marks it as found.
+      WordSearch.prototype.checkWord = function () {
+        const selectedWord = this.selectedCells
+          .map((cell) => cell.textContent)
+          .join('');
+
+        const wordIndex = this.settings.words.indexOf(selectedWord);
+        if (wordIndex > -1) {
+          this.markAsFound(selectedWord);
+          this.settings.words.splice(wordIndex, 1);
+          this.updateWordList();
+          if (this.settings.words.length === 0) {
+            endGame('win');
+          }
+        }
+      };
+
+      // Clears the selection of cells once a word is found or invalid selection is made.
+      WordSearch.prototype.clearSelection = function () {
+        this.selectedCells.forEach((cell) =>
+          cell.classList.remove('ws-selected')
+        );
+        this.selectedCells = [];
+      };
+
+      // Marks the selected cells as found when a word is identified.
+      WordSearch.prototype.markAsFound = function (word) {
+        this.selectedCells.forEach((cell) => cell.classList.add('ws-found'));
+        const wordListItems = document.querySelectorAll('.ws-word');
+        wordListItems.forEach((item) => {
+          if (item.textContent === word) {
+            item.classList.add('found');
+          }
+        });
+      };
+
+      // Updates the word list UI after a word is found or at the start of the game.
+      WordSearch.prototype.updateWordList = function () {
+        const wordListEl = document.querySelector('.ws-words');
+        wordListEl.innerHTML = '';
+        if (this.settings.words.length === 0) {
+          wordListEl.style.display = 'none';
+        }
+        this.settings.words.forEach((word) => {
+          const li = document.createElement('li');
+          li.classList.add('ws-word');
+          li.textContent = word;
+          wordListEl.appendChild(li);
+        });
+      };
+
+      // Main game initialization function
+      async function startGame(difficulty) {
+        const words = await fetchWords(difficulty);
+        const wordListEl = document.querySelector('.ws-words');
+        wordListEl.style.display = 'block';
+        wordListEl.innerHTML = ''; // Clear word list
+
+        words.forEach((word) => {
+          const li = document.createElement('li');
+          li.classList.add('ws-word');
+          li.textContent = word;
+          wordListEl.appendChild(li);
+        });
+
+        const gameAreaEl = document.getElementById('ws-area');
+        gameAreaEl.wordSearch({
+          gridSize: 10,
+          words: words,
+        });
+
+        startTimer(gameTime);
+        document.getElementById('restart-btn').style.display = 'none';
+      }
+
+      // Starts the countdown timer for the game.
+      function startTimer(duration) {
+        clearInterval(countdownInterval);
+        timeRemaining = duration;
+        const timerEl = document.getElementById('timer');
+        timerEl.textContent = timeRemaining;
+
+        countdownInterval = setInterval(() => {
+          timeRemaining--;
+          timerEl.textContent = timeRemaining;
+
+          if (timeRemaining <= 0) {
+            clearInterval(countdownInterval);
+            endGame('timeUp');
+          }
+        }, 1000);
+      }
+
+      // Ends the game either by winning or time running out.
+      function endGame(reason) {
+        clearInterval(countdownInterval);
+        if (reason === 'win') {
+          let finalTime = gameTime - timeRemaining;
+          const bestTime = localStorage.getItem('bestTime');
+          let finalTimeEl = document.getElementById('final-time');
+          let modalBestTimeEl = document.getElementById('modal-best-time');
+          if (!bestTime || finalTime < bestTime) {
+            localStorage.setItem('bestTime', finalTime);
+            let bestTimeEl = document.getElementById('best-time');
+            bestTimeEl.textContent = finalTime;
+          }
+          finalTimeEl.textContent = finalTime;
+          modalBestTimeEl.textContent =
+            localStorage.getItem('bestTime') || 'N/A';
+
+          // Show the modal using Bootstrap modal API
+          const congratsModal = new bootstrap.Modal(
+            document.getElementById('congratulationsModal')
+          );
+          congratsModal.show();
+        } else if (reason === 'timeUp') {
+          alert('Time is up! Game over.');
+        }
+
+        document.getElementById('restart-btn').style.display = 'block';
+      }
+
+      // Event listener for restarting the game
+      document
+        .getElementById('restart-btn')
+        .addEventListener('click', function () {
+          const difficulty = parseInt(
+            document.getElementById('difficulty-selector').value
+          );
+          startGame(difficulty);
+        });
+
+      // Event listener for restarting the game from the modal
+      document
+        .getElementById('restart-modal-btn')
+        .addEventListener('click', function () {
+          const difficulty = parseInt(
+            document.getElementById('difficulty-selector').value
+          );
+          startGame(difficulty);
+        });
+
+      // Event listener for changing difficulty
+      document
+        .getElementById('difficulty-selector')
+        .addEventListener('change', function () {
+          const difficulty = parseInt(this.value);
+          startGame(difficulty);
+        });
+
+      // Start the game with default difficulty (4 letters)
+      startGame(4);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Search Game</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<style>
+    #game-grid {
+        display: grid;
+        grid-template-columns: repeat(10, 30px);
+        gap: 2px;
+    }
+    .letter {
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        border: 1px solid #ccc;
+        cursor: pointer;
+    }
+    .selected {
+        background-color: yellow;
+    }
+    .found {
+        background-color: green;
+        color: white;
+    }
+    .word-list-item.found {
+        text-decoration: line-through;
+    }
+</style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1>Word Search Game</h1>
+    <div class="mb-3">
+        <button onclick="startGame('easy')">Easy</button>
+        <button onclick="startGame('medium')">Medium</button>
+        <button onclick="startGame('hard')">Hard</button>
+    </div>
+    <div id="game-grid"></div>
+    <div>
+        <h3>Words to Find:</h3>
+        <ul id="word-list"></ul>
+    </div>
+    <div>
+        <p>Time: <span id="timer">0</span>s</p>
+        <p>Best Time: <span id="best-time">N/A</span>s</p>
+    </div>
+</div>
+
+<div class="modal fade" id="endGameModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Game Over!</h5>
+            </div>
+            <div class="modal-body">
+                <p id="game-result-message"></p>
+                <p>Your Time: <span id="current-time"></span>s</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<script>
+let gameState = {
+    words: [],
+    grid: [],
+    difficulty: '',
+    timer: 0,
+    intervalId: null,
+    bestTime: Infinity
+};
+
+function startGame(difficulty) {
+    fetchWords(difficulty).then(() => {
+        setupGrid();
+        startTimer();
+    });
+}
+
+function fetchWords(difficulty) {
+    return fetch(`https://api.datamuse.com/words?sp=????&max=10`)
+        .then(response => response.json())
+        .then(data => {
+            gameState.words = data.words;
+            gameState.difficulty = difficulty;
+            updateWordList();
+        });
+}
+
+function setupGrid() {
+    // Logic to set up the grid with words and random letters
+    // This function would place words and fill the rest with random letters
+}
+
+function startTimer() {
+    gameState.timer = 0;
+    gameState.intervalId = setInterval(() => {
+        gameState.timer++;
+        document.getElementById('timer').textContent = gameState.timer;
+        if (gameState.timer >= 300) endGame(false); // Assuming 5 minutes max
+    }, 1000);
+}
+
+function updateWordList() {
+    $('#word-list').html(gameState.words.map(word => `<li class="word-list-item">${word}</li>`).join(''));
+}
+
+function endGame(won) {
+    clearInterval(gameState.intervalId);
+    const message = won ? "Congratulations, you found all the words!" : "Time's up!";
+    $('#game-result-message').text(message);
+    $('#current-time').text(gameState.timer);
+    $('#endGameModal').modal('show');
+    updateBestTime();
+}
+
+function updateBestTime() {
+    const storedBest = localStorage.getItem(`bestTime_${gameState.difficulty}`);
+    if (!storedBest || gameState.timer < storedBest) {
+        localStorage.setItem(`bestTime_${gameState.difficulty}`, gameState.timer);
+        gameState.bestTime = gameState.timer;
+    } else {
+        gameState.bestTime = storedBest;
+    }
+    document.getElementById('best-time').textContent = gameState.bestTime;
+}
+
+function restartGame() {
+    $('#endGameModal').modal('hide');
+    startGame(gameState.difficulty);
+}
+
+// Additional event listeners for word selection would go here
+</script>
+</body>
+</html>
