@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Typing Speed Game</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+<style>
+    #game-container {
+        max-width: 600px;
+        margin: auto;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+    #grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+        margin: 20px 0;
+    }
+    .word {
+        padding: 10px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        cursor: pointer;
+    }
+    #timer, #best-times {
+        position: absolute;
+        top: 10px;
+        font-size: 1.2em;
+    }
+    #timer { left: 10px; }
+    #best-times { right: 10px; }
+    .loader {
+        border: 16px solid #f3f3f3;
+        border-top: 16px solid #3498db;
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        animation: spin 2s linear infinite;
+        margin: 20px auto;
+        display: none;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <select id="difficulty">
+        <option value="easy">Easy (3x3)</option>
+        <option value="medium">Medium (4x4)</option>
+        <option value="hard">Hard (5x5)</option>
+    </select>
+    <div id="timer">60s</div>
+    <div id="best-times"></div>
+    <div id="grid"></div>
+    <div class="loader" id="loader"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    const game = {
+        words: [],
+        timeLeft: 60,
+        gridSize: { easy: 3, medium: 4, hard: 5 },
+        currentDifficulty: 'easy',
+        timerInterval: null,
+
+        init: function() {
+            this.loadBestTimes();
+            $('#difficulty').on('change', this.startGame.bind(this));
+            this.startGame();
+        },
+
+        startGame: function() {
+            this.currentDifficulty = $('#difficulty').val();
+            this.timeLeft = 60;
+            this.words = [];
+            clearInterval(this.timerInterval);
+            this.fetchWords();
+        },
+
+        fetchWords: function() {
+            $('#loader').show();
+            $.ajax({
+                url: `https://random-word-api.herokuapp.com/word?number=${this.gridSize[this.currentDifficulty]**2}`,
+                success: (data) => {
+                    this.words = data;
+                    this.setupGame();
+                    $('#loader').hide();
+                }
+            });
+        },
+
+        setupGame: function() {
+            $('#grid').empty().css('width', `${this.gridSize[this.currentDifficulty] * 110}px`);
+            this.words.forEach(word => {
+                $('#grid').append(`<div class="word">${word}</div>`);
+            });
+            this.startTimer();
+            this.bindWordClick();
+        },
+
+        startTimer: function() {
+            $('#timer').text('60s');
+            this.timerInterval = setInterval(() => {
+                if(this.timeLeft > 0) {
+                    this.timeLeft--;
+                    $('#timer').text(`${this.timeLeft}s`);
+                } else {
+                    this.endGame();
+                }
+            }, 1000);
+        },
+
+        bindWordClick: function() {
+            $('.word').on('click', function() {
+                if($(this).text() === game.words[0]) {
+                    $(this).remove();
+                    game.words.shift();
+                    if(game.words.length === 0) game.endGame(true);
+                }
+            });
+        },
+
+        endGame: function(won = false) {
+            clearInterval(this.timerInterval);
+            if(won) {
+                this.updateBestTime();
+            }
+            alert(won ? 'You won!' : 'Time\'s up!');
+            this.startGame();
+        },
+
+        updateBestTime: function() {
+            let bestTime = localStorage.getItem(this.currentDifficulty) || 60;
+            if(this.timeLeft > bestTime) {
+                localStorage.setItem(this.currentDifficulty, this.timeLeft);
+                this.loadBestTimes();
+            }
+        },
+
+        loadBestTimes: function() {
+            $('#best-times').html(`Best Times:<br>
+                Easy: ${localStorage.getItem('easy') || '-'}s<br>
+                Medium: ${localStorage.getItem('medium') || '-'}s<br>
+                Hard: ${localStorage.getItem('hard') || '-'}s`);
+        }
+    };
+
+    game.init();
+});
+</script>
+</body>
+</html>
