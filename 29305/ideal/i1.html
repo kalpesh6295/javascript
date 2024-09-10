@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typing Tower</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: #2c3e50;
+      position: relative;
+    }
+
+    .game-container {
+      background-color: #ffffff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 36px;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .tower {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 300px;
+      width: 180px;
+      background-color: #f1f1f1;
+      border: 2px solid #bdc3c7;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 20px auto;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .block {
+      width: 100%;
+      height: 20px;
+      margin-bottom: 2px;
+      border-radius: 2px;
+    }
+
+    .input-box {
+      padding: 12px;
+      font-size: 18px;
+      width: 100%;
+      max-width: 450px;
+      border-radius: 8px;
+      border: 2px solid #3498db;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .input-box:focus {
+      border-color: #2980b9;
+      box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+    }
+
+    button {
+      padding: 12px 30px;
+      font-size: 18px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+      box-shadow: 0 4px 8px rgba(41, 128, 185, 0.3);
+    }
+
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #3498db;
+      display: none;
+    }
+
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+
+    .timer {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .level {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #2c3e50;
+      display: block;
+    }
+
+    .score {
+      position: absolute;
+      top: 45px;
+      right: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .tower {
+        height: 250px;
+        width: 150px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      button, .input-box {
+        font-size: 16px;
+      }
+
+      .timer, .score, .level {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="timer">Time: <span id="timer">90</span>s</div>
+  <div class="level">Level: <span id="level">1</span></div>
+  <div class="score">Blocks: <span id="blockCount">0</span></div>
+
+  <div class="game-container">
+    <h1>Typing Tower</h1>
+
+    <div class="tower" id="tower">
+      <!-- Blocks will be added here -->
+    </div>
+
+    <input type="text" id="wordInput" class="input-box" placeholder="Type the word..." disabled />
+
+    <div class="loading" id="loading">
+      <span class="loader"></span> Loading words...
+    </div>
+
+    <button id="startButton" disabled>Start Game</button>
+  </div>
+
+  <script>
+    // Game variables
+    let timer = 90;
+    let blockCount = 0;
+    let currentLevel = 1;
+    let wordsTyped = 0;
+    let wordLength = 3;
+    let wordList = [];
+    let currentWord = "";
+    let timerInterval = null;
+    const loadingIndicator = document.getElementById('loading');
+    const tower = document.getElementById('tower');
+    const wordInput = document.getElementById('wordInput');
+    const timerDisplay = document.getElementById('timer');
+    const blockCountDisplay = document.getElementById('blockCount');
+    const levelDisplay = document.getElementById('level');
+    const startButton = document.getElementById('startButton');
+    const randomWordAPI = 'https://random-word-api.herokuapp.com/word';
+
+    // Initialize the game
+    async function initGame() {
+      blockCount = 0;
+      currentLevel = 1;
+      wordsTyped = 0;
+      wordLength = 3;
+      wordInput.value = '';
+      wordInput.disabled = true;
+      tower.innerHTML = ''; // Clear the tower
+      loadingIndicator.style.display = 'block'; // Show loading
+      startButton.disabled = true; // Disable start button until words are loaded
+
+      timer = 90;
+      timerDisplay.textContent = timer;
+      blockCountDisplay.textContent = blockCount;
+      levelDisplay.textContent = currentLevel;
+
+      // Fetch words
+      await fetchWords();
+      
+      wordInput.placeholder = `Type "${currentWord}"...`;
+      loadingIndicator.style.display = 'none'; // Hide loading
+      startButton.disabled = false; // Enable start button
+    }
+
+    // Fetch random words from the API based on word length
+    async function fetchWords() {
+      const response = await fetch(`${randomWordAPI}?number=100&length=${currentLevel+2}`);
+      const words = await response.json();
+
+      // Filter words based on the current word length
+      wordList = words.filter(word => word.length === wordLength);
+
+      if (wordList.length === 0) {
+        alert('No words of the required length found. Please try again.');
+        return;
+      }
+
+      currentWord = getRandomWord();
+    }
+
+    // Start the game
+    function startGame() {
+      wordInput.disabled = false;
+      wordInput.focus();
+      startButton.disabled = true;
+      startTimer();
+    }
+
+    // Timer function
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timer--;
+        timerDisplay.textContent = timer;
+        if (timer <= 0) {
+          clearInterval(timerInterval);
+          endGame();
+        }
+      }, 1000);
+    }
+
+    // Get a random word from the word list
+    function getRandomWord() {
+      const randomIndex = Math.floor(Math.random() * wordList.length);
+      return wordList[randomIndex];
+    }
+
+    // Add a block to the tower and handle word progression
+    async function addBlock() {
+      const block = document.createElement('div');
+      block.classList.add('block');
+      block.style.backgroundColor = getRandomColor(); // Random block color
+      tower.appendChild(block);
+      blockCount++;
+      blockCountDisplay.textContent = blockCount;
+      
+      wordsTyped++;
+    }
+
+    // Handle typing input
+    wordInput.addEventListener('input', async(e) => {
+      const typedWord = e.target.value.toLowerCase();
+      if (typedWord === currentWord.toLowerCase()) {
+        addBlock();
+        // Increase word length after every 10 words typed correctly
+      if (wordsTyped % 10 === 0) {
+        currentLevel++;
+        levelDisplay.textContent = currentLevel;
+        wordLength++;
+        await fetchWords();
+      }
+        currentWord = getRandomWord();
+        wordInput.placeholder = `Type "${currentWord}"...`;
+        e.target.value = '';
+      }
+    });
+
+    // Get a random color
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    // End the game
+    function endGame() {
+      wordInput.disabled = true;
+      startButton.disabled = false;
+      alert(`Game Over! You built ${blockCount} blocks and reached Level ${currentLevel}!`);
+      initGame();
+    }
+
+    // Start button click event
+    startButton.addEventListener('click', startGame);
+
+    // Initialize game on page load
+    initGame();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tower Typing Game</title>
+<style>
+    body { font-family: Arial, sans-serif; display: flex; justify-content: center; background: #f0f0f0; }
+    #gameContainer { margin-top: 50px; text-align: center; }
+    #tower { width: 200px; height: 400px; background: #ddd; margin: 20px auto; position: relative; }
+    .block { width: 100%; position: absolute; bottom: 0; transition: all 0.5s; }
+    #timer, #level, #blockCount, #progressBar { margin: 10px 0; }
+    #progressBar { width: 200px; height: 20px; background: #e0e0e0; margin: auto; }
+    #progress { height: 100%; background: #4CAF50; width: 0; }
+    #loader { border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; display: none; margin: 10px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+    <div id="timer">Time: 90</div>
+    <div id="level">Level: 1</div>
+    <div id="blockCount">Blocks: 0</div>
+    <div id="progressBar"><div id="progress"></div></div>
+    <div id="wordDisplay">Type this word:</div>
+    <input type="text" id="wordInput" autocomplete="off" autofocus>
+    <div id="tower"></div>
+    <div id="loader"></div>
+    <div id="endGameMessage"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    let timer = 90;
+    let level = 1;
+    let blockCount = 0;
+    let wordLength = 3;
+    let wordsTyped = 0;
+    let currentWord = '';
+    let gameInterval;
+    const towerHeightPerBlock = 40; // Assuming each block is 40px tall for simplicity
+
+    function startGame() {
+        fetchWord();
+        gameInterval = setInterval(() => {
+            timer--;
+            $('#timer').text(`Time: ${timer}`);
+            if (timer <= 0) {
+                endGame();
+            }
+        }, 1000);
+
+        $('#wordInput').on('input', function() {
+            if ($(this).val().trim() === currentWord) {
+                correctWord();
+                $(this).val('');
+            }
+        });
+    }
+
+    function fetchWord() {
+        $('#loader').show();
+        $.ajax({
+            url: `https://random-word-api.herokuapp.com/word?length=${wordLength}&number=1`,
+            success: function(data) {
+                currentWord = data[0];
+                $('#wordDisplay').text(`Type this word: ${currentWord}`);
+                $('#loader').hide();
+            }
+        });
+    }
+
+    function correctWord() {
+        wordsTyped++;
+        blockCount++;
+        updateTower();
+        updateProgress();
+        if (wordsTyped % 10 === 0) {
+            level++;
+            wordLength++;
+            $('#level').text(`Level: ${level}`);
+        }
+        $('#blockCount').text(`Blocks: ${blockCount}`);
+        fetchWord();
+    }
+
+    function updateTower() {
+        let color = '#' + Math.floor(Math.random()*16777215).toString(16);
+        let block = $('<div class="block"></div>').css({
+            'height': `${towerHeightPerBlock}px`,
+            'background-color': color
+        });
+        $('#tower').append(block);
+        setTimeout(() => block.css('bottom', `${blockCount * towerHeightPerBlock}px`), 50);
+    }
+
+    function updateProgress() {
+        let progress = (wordsTyped % 10) * 10;
+        $('#progress').css('width', `${progress}%`);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        $('#wordInput').prop('disabled', true);
+        $('#endGameMessage').text(`Game Over! You built ${blockCount} blocks and reached level ${level}.`);
+    }
+
+    startGame();
+});
+</script>
+
+</body>
+</html>

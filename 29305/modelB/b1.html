@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Tower Game</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0; }
+        #gameArea { text-align: center; }
+        #timer { position: fixed; top: 10px; left: 10px; font-size: 1.5em; }
+        #wordDisplay { font-size: 2em; margin: 20px 0; }
+        #inputWord { font-size: 1.5em; padding: 5px; }
+        #tower { width: 200px; height: 300px; border: 1px solid #000; margin: 20px auto; display: flex; flex-direction: column-reverse; }
+        .block { width: 100%; height: 20px; }
+        #progressBar { width: 100%; background-color: #ddd; }
+        #progress { height: 30px; background-color: #4CAF50; width: 0%; }
+        .loader { border: 16px solid #f3f3f3; border-top: 16px solid #3498db; border-radius: 50%; width: 120px; height: 120px; animation: spin 2s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="timer">90</div>
+    <div id="gameArea">
+        <h1>Build Your Tower!</h1>
+        <div id="wordDisplay"></div>
+        <input type="text" id="inputWord" placeholder="Type the word here...">
+        <div id="tower"></div>
+        <div id="progressBar"><div id="progress"></div></div>
+        <p>Level: <span id="level">1</span> | Blocks: <span id="blockCount">0</span></p>
+        <div class="loader"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        let timer = 90, level = 1, blocks = 0, currentWordLength = 3, wordsTyped = 0;
+        let wordAPI = `https://random-word-api.herokuapp.com/word?length=${currentWordLength}`;
+        let gameInterval;
+
+        function startGame() {
+            fetchWord();
+            gameInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            timer--;
+            $('#timer').text(timer);
+            if (timer <= 0) {
+                endGame();
+            }
+        }
+
+        function fetchWord() {
+            $('.loader').show();
+            $.getJSON(wordAPI, function(data) {
+                $('.loader').hide();
+                $('#wordDisplay').text(data[0]);
+            });
+        }
+
+        $('#inputWord').on('input', function() {
+            if ($(this).val().toLowerCase() === $('#wordDisplay').text().toLowerCase()) {
+                blocks++;
+                wordsTyped++;
+                $('#blockCount').text(blocks);
+                addBlockToTower();
+                $(this).val('');
+
+                if (wordsTyped % 10 === 0) {
+                    level++;
+                    currentWordLength++;
+                    wordAPI = `https://random-word-api.herokuapp.com/word?length=${currentWordLength}`;
+                    $('#level').text(level);
+                }
+                fetchWord();
+                updateProgressBar();
+            }
+        });
+
+        function addBlockToTower() {
+            const color = '#' + Math.floor(Math.random()*16777215).toString(16);
+            $('#tower').prepend(`<div class="block" style="background-color: ${color};"></div>`);
+        }
+
+        function updateProgressBar() {
+            let progress = (wordsTyped % 10) * 10;
+            $('#progress').css('width', progress + '%');
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            alert(`Game Over! You reached level ${level} with ${blocks} blocks.`);
+        }
+
+        startGame();
+    });
+    </script>
+</body>
+</html>
