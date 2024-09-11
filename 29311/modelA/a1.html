@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Guess Game</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+<style>
+    body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f0f0f0; }
+    #gameBoard { margin-top: 20px; }
+    .letter-box { 
+        display: inline-block; 
+        border: 2px solid #333; 
+        margin: 5px; 
+        width: 40px; 
+        height: 40px; 
+        line-height: 40px; 
+        font-size: 24px;
+        transition: background-color 0.3s, opacity 1s;
+    }
+    #guessInput { margin-top: 20px; }
+    #feedback { margin: 10px 0; }
+    .green { background-color: #66bb6a; }
+    .yellow { background-color: #fdd835; }
+    .red { background-color: #ef5350; }
+    .hidden { opacity: 0; }
+    #timer, #guessesLeft, #bestTimes { position: absolute; top: 10px; }
+    #timer { left: 50%; transform: translateX(-50%); }
+    #guessesLeft { left: 10px; }
+    #bestTimes { right: 10px; }
+</style>
+</head>
+<body>
+<select id="difficulty">
+    <option value="4">Easy</option>
+    <option value="5" selected>Medium</option>
+    <option value="6">Hard</option>
+</select>
+<div id="gameBoard"></div>
+<input type="text" id="guessInput" maxlength="6" placeholder="Enter your guess">
+<button onclick="checkGuess()">Guess</button>
+<button onclick="getHint()">Hint</button>
+<button onclick="resetGame()">Reset</button>
+<div id="feedback"></div>
+<div id="timer">Time: 0s</div>
+<div id="guessesLeft">Guesses Left: 5</div>
+<div id="bestTimes">Best Times: Easy: -- | Medium: -- | Hard: --</div>
+
+<script>
+const API_URL = 'https://random-word-api.herokuapp.com/word?length=';
+let wordToGuess, currentGuess = '', turnsLeft = 5, gameTimer, hintsUsed = 0;
+let bestTimes = JSON.parse(localStorage.getItem('wordGuessBestTimes')) || {4: null, 5: null, 6: null};
+
+function startGame(length) {
+    fetch(API_URL + length)
+    .then(response => response.json())
+    .then(data => {
+        wordToGuess = data[0].toUpperCase();
+        setupGameBoard(length);
+        startTimer();
+    });
+}
+
+function setupGameBoard(length) {
+    const board = document.getElementById('gameBoard');
+    board.innerHTML = '';
+    for(let i = 0; i < length; i++) {
+        let div = document.createElement('div');
+        div.className = 'letter-box hidden';
+        board.appendChild(div);
+    }
+}
+
+function startTimer() {
+    let seconds = 0;
+    gameTimer = setInterval(() => {
+        document.getElementById('timer').textContent = `Time: ${++seconds}s`;
+    }, 1000);
+}
+
+function checkGuess() {
+    if(turnsLeft <= 0 || currentGuess.length !== wordToGuess.length) return;
+    turnsLeft--;
+    document.getElementById('guessesLeft').textContent = `Guesses Left: ${turnsLeft}`;
+    
+    const feedback = document.getElementById('feedback');
+    let result = '';
+    for(let i = 0; i < wordToGuess.length; i++) {
+        let color = 'red';
+        if(wordToGuess[i] === currentGuess[i]) color = 'green';
+        else if(wordToGuess.includes(currentGuess[i])) color = 'yellow';
+        document.getElementsByClassName('letter-box')[i].textContent = currentGuess[i];
+        document.getElementsByClassName('letter-box')[i].classList.remove('hidden');
+        document.getElementsByClassName('letter-box')[i].classList.add(color);
+        result += `<span style="color:${color};">${currentGuess[i]}</span>`;
+    }
+    feedback.innerHTML = result;
+    
+    if(currentGuess === wordToGuess) {
+        clearInterval(gameTimer);
+        confetti();
+        updateBestTime();
+        alert('Congratulations! You guessed the word!');
+    } else if(turnsLeft === 0) {
+        alert(`Game Over! The word was ${wordToGuess}`);
+    }
+}
+
+function getHint() {
+    if(hintsUsed >= 2 || turnsLeft <= 0) return;
+    hintsUsed++;
+    for(let i = 0; i < wordToGuess.length; i++) {
+        if(document.getElementsByClassName('letter-box')[i].textContent === '') {
+            currentGuess = currentGuess.substring(0, i) + wordToGuess[i] + currentGuess.substring(i + 1);
+            checkGuess();
+            break;
+        }
+    }
+}
+
+function resetGame() {
+    clearInterval(gameTimer);
+    const length = document.getElementById('difficulty').value;
+    turnsLeft = 5;
+    hintsUsed = 0;
+    document.getElementById('guessesLeft').textContent = `Guesses Left: 5`;
+    document.getElementById('timer').textContent = 'Time: 0s';
+    document.getElementById('feedback').innerHTML = '';
+    startGame(length);
+}
+
+function updateBestTime() {
+    const time = parseInt(document.getElementById('timer').textContent.split(' ')[1]);
+    const difficulty = document.getElementById('difficulty').value;
+    if(!bestTimes[difficulty] || time < bestTimes[difficulty]) {
+        bestTimes[difficulty] = time;
+        localStorage.setItem('wordGuessBestTimes', JSON.stringify(bestTimes));
+    }
+    document.getElementById('bestTimes').textContent = `Best Times: Easy: ${bestTimes[4] || '--'} | Medium: ${bestTimes[5] || '--'} | Hard: ${bestTimes[6] || '--'}`;
+}
+
+document.getElementById('difficulty').onchange = resetGame;
+resetGame(5); // Start with medium difficulty
+</script>
+</body>
+</html>

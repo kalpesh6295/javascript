@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Guessing Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #gameBoard { margin-top: 20px; }
+        .letterBox { 
+            border: 2px solid #ccc; 
+            margin: 5px; 
+            padding: 10px; 
+            display: inline-block; 
+            width: 30px; 
+            font-weight: bold; 
+        }
+        .correct { background: green; color: white; }
+        .partial { background: yellow; }
+        .wrong { background: red; color: white; }
+        #timer, #guessesLeft, #bestTimes { position: absolute; top: 10px; }
+        #timer { left: 50%; transform: translateX(-50%); }
+        #guessesLeft { left: 10px; }
+        #bestTimes { right: 10px; }
+    </style>
+</head>
+<body>
+    <select id="difficulty">
+        <option value="4">Easy</option>
+        <option value="5">Medium</option>
+        <option value="6">Hard</option>
+    </select>
+    <div id="gameBoard"></div>
+    <input type="text" id="guessInput" maxlength="6" placeholder="Enter your guess">
+    <button onclick="submitGuess()">Submit</button>
+    <button onclick="getHint()">Hint</button>
+    <button onclick="resetGame()">Reset</button>
+    <div id="timer">Time: 0s</div>
+    <div id="guessesLeft">Guesses: 5</div>
+    <div id="bestTimes"></div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    let wordToGuess;
+    let guessesLeft = 5;
+    let hintUsed = 0;
+    let timerInterval;
+    let seconds = 0;
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            seconds++;
+            $('#timer').text('Time: ' + seconds + 's');
+        }, 1000);
+    }
+
+    function fetchWord(length) {
+        // Placeholder for an API call. Replace with actual API endpoint.
+        fetch(`https://random-word-api.herokuapp.com/word?length=${length}`)
+            .then(response => response.json())
+            .then(data => {
+                wordToGuess = data[0].toUpperCase();
+                initGame();
+            });
+    }
+
+    function initGame() {
+        $('#gameBoard').empty();
+        for(let i = 0; i < wordToGuess.length; i++) {
+            $('#gameBoard').append('<div class="letterBox"></div>');
+        }
+        guessesLeft = 5;
+        hintUsed = 0;
+        seconds = 0;
+        clearInterval(timerInterval);
+        startTimer();
+        updateGuessesLeft();
+    }
+
+    function submitGuess() {
+        const guess = $('#guessInput').val().toUpperCase();
+        if (guess.length !== wordToGuess.length) return;
+
+        let feedback = checkGuess(guess);
+        displayFeedback(guess, feedback);
+        updateGuessesLeft();
+        checkWinLose(guess);
+    }
+
+    function checkGuess(guess) {
+        let feedback = Array(guess.length).fill('wrong');
+        let correctWord = wordToGuess.split('');
+        let guessWord = guess.split('');
+
+        // Check for correct positions first
+        guessWord.forEach((letter, idx) => {
+            if (letter === correctWord[idx]) {
+                feedback[idx] = 'correct';
+                correctWord[idx] = null; // Mark as used
+            }
+        });
+
+        // Check for partial matches
+        guessWord.forEach((letter, idx) => {
+            if (feedback[idx] !== 'correct' && correctWord.includes(letter)) {
+                feedback[idx] = 'partial';
+                let index = correctWord.indexOf(letter);
+                correctWord[index] = null; // Mark as used
+            }
+        });
+
+        return feedback;
+    }
+
+    function displayFeedback(guess, feedback) {
+        $('#gameBoard .letterBox').each((i, box) => {
+            $(box).html(guess[i]).removeClass().addClass('letterBox ' + feedback[i]).addClass('animate__animated animate__fadeIn');
+        });
+    }
+
+    function updateGuessesLeft() {
+        $('#guessesLeft').text('Guesses: ' + --guessesLeft);
+    }
+
+    function checkWinLose(guess) {
+        if (guess === wordToGuess) {
+            clearInterval(timerInterval);
+            // Here you would trigger confetti or win animation
+            alert('You won! Time: ' + seconds + ' seconds');
+            updateBestTime();
+        } else if (guessesLeft === 0) {
+            alert('Game Over! The word was ' + wordToGuess);
+        }
+    }
+
+    function getHint() {
+        if (hintUsed < 2) {
+            for(let i = 0; i < wordToGuess.length; i++) {
+                if($('#gameBoard .letterBox').eq(i).text() === '') {
+                    $('#gameBoard .letterBox').eq(i).text(wordToGuess[i]).addClass('correct');
+                    hintUsed++;
+                    break;
+                }
+            }
+        }
+    }
+
+    function resetGame() {
+        const length = $('#difficulty').val();
+        fetchWord(length);
+    }
+
+    function updateBestTime() {
+        const difficulty = $('#difficulty').val();
+        const bestTimeKey = `bestTime${difficulty}`;
+        let bestTime = localStorage.getItem(bestTimeKey) || Infinity;
+        if (seconds < bestTime) {
+            localStorage.setItem(bestTimeKey, seconds);
+            $('#bestTimes').text(`Best Times - Easy: ${localStorage.getItem('bestTime4') || 'N/A'}s, Medium: ${localStorage.getItem('bestTime5') || 'N/A'}s, Hard: ${localStorage.getItem('bestTime6') || 'N/A'}s`);
+        }
+    }
+
+    $('#difficulty').on('change', resetGame);
+    resetGame(); // Start game with default difficulty
+    </script>
+</body>
+</html>

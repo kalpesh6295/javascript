@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Guessing Game</title>
+
+    <!-- Bootstrap CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #74ebd5, #acb6e5);
+        font-family: 'Poppins', sans-serif;
+        overflow: hidden;
+      }
+
+      .game-container {
+        background-color: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border-radius: 20px;
+        padding: 40px 30px;
+        text-align: center;
+        width: 100%;
+        min-width: 500px;
+        position: relative;
+        z-index: 2;
+      }
+
+      h1 {
+        color: #34495e;
+        font-size: 28px;
+        margin: 30px 0;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .turns-left,
+      .best-time,
+      .timer {
+        font-size: 18px;
+        font-weight: bold;
+        color: #34495e;
+        background: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .guess-input {
+        font-size: 20px;
+        padding: 12px;
+        margin: 20px auto;
+        border-radius: 10px;
+        outline: none;
+        text-align: center;
+        border: 2px solid #3498db;
+        width: 100%;
+        max-width: 300px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.3s ease;
+      }
+
+      .guess-input:focus {
+        border-color: #2980b9;
+      }
+
+      .guess-result {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+      }
+
+      .guess-result div {
+        width: 45px;
+        height: 45px;
+        margin: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        border-radius: 8px;
+        color: white;
+        transition: all 0.3s ease;
+        opacity: 0;
+        animation: fadeIn 0.5s ease forwards;
+      }
+
+      .guess-result .correct {
+        background-color: #27ae60;
+      }
+
+      .guess-result .present {
+        background-color: #f39c12;
+      }
+
+      .guess-result .absent {
+        background-color: #e74c3c;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .message {
+        margin: 10px 0;
+        font-size: 22px;
+        font-weight: bold;
+      }
+
+      .message.win {
+        color: #2ecc71;
+      }
+
+      .message.lose {
+        color: #e74c3c;
+      }
+
+      button {
+        margin: 20px 0;
+        padding: 12px 30px;
+        font-size: 18px;
+        border-radius: 10px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        width: 200px;
+      }
+
+      button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn-primary {
+        background-color: #3498db;
+        border: none;
+      }
+
+      .btn-primary:hover {
+        background-color: #2980b9;
+      }
+
+      .btn-hint {
+        background-color: #f39c12;
+        border: none;
+      }
+
+      .btn-hint:hover {
+        background-color: #e67e22;
+      }
+
+      .btn-success {
+        background-color: #2ecc71;
+        border: none;
+      }
+
+      .btn-success:hover {
+        background-color: #27ae60;
+      }
+
+      .btn-danger {
+        background-color: #e74c3c;
+        border: none;
+      }
+
+      .btn-danger:hover {
+        background-color: #c0392b;
+      }
+
+      .time-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row;
+        width: 500px;
+      }
+
+      .confetti {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #f39c12;
+        opacity: 0;
+        animation: confetti-fall 2s linear forwards;
+      }
+
+      @keyframes confetti-fall {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(600px);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .guess-result div {
+          width: 40px;
+          height: 40px;
+          font-size: 18px;
+        }
+
+        h1 {
+          font-size: 32px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="time-info">
+        <div class="turns-left">Turns Left: <span id="turnsLeft">5</span></div>
+        <div class="timer">Time: <span id="timeElapsed">00:00</span></div>
+        <div class="best-time">Best Time: <span id="bestTime">--</span></div>
+      </div>
+
+      <h1>Word Guessing Game</h1>
+
+      <div class="mb-3">
+        <label for="difficultySelect" class="form-label"
+          >Select Difficulty:</label
+        >
+        <select id="difficultySelect" class="form-select w-50 mx-auto">
+          <option value="easy">Easy (4-letter)</option>
+          <option value="medium">Medium (5-letter)</option>
+          <option value="hard">Hard (6-letter)</option>
+        </select>
+      </div>
+
+      <input
+        type="text"
+        id="guessInput"
+        class="form-control guess-input"
+        placeholder="Enter a word"
+        disabled
+      />
+      <button id="submitGuess" class="btn btn-primary" disabled>
+        Submit Guess
+      </button>
+      <button id="hintButton" class="btn btn-hint" disabled>
+        Use Hint (2 remaining)
+      </button>
+      <div id="results"></div>
+      <div class="message" id="message"></div>
+      <button id="startGame" class="btn btn-success">Start Game</button>
+      <button id="resetGame" class="btn btn-danger" disabled>Reset</button>
+
+      <div id="confettiContainer"></div>
+      <!-- Container for confetti -->
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const randomWordAPI =
+        'https://random-word-api.herokuapp.com/word?number=100';
+      let wordsList = [];
+      let targetWord = '';
+      let wordLength = 5;
+      let currentTurn = 0;
+      let maxTurns = 5;
+      let timeElapsed = 0;
+      let timerInterval = null;
+      let hintsUsed = 0;
+      const maxHints = 2;
+
+      // DOM elements
+      const difficultySelect = document.getElementById('difficultySelect');
+      const guessInput = document.getElementById('guessInput');
+      const submitGuess = document.getElementById('submitGuess');
+      const hintButton = document.getElementById('hintButton');
+      const startGame = document.getElementById('startGame');
+      const resetGame = document.getElementById('resetGame');
+      const results = document.getElementById('results');
+      const message = document.getElementById('message');
+      const turnsLeftDisplay = document.getElementById('turnsLeft');
+      const timeElapsedDisplay = document.getElementById('timeElapsed');
+      const bestTimeDisplay = document.getElementById('bestTime');
+      const confettiContainer = document.getElementById('confettiContainer');
+
+      displayBestTime();
+
+      // Fetch words from API
+      async function fetchWords() {
+        const response = await fetch(randomWordAPI);
+        wordsList = await response.json();
+      }
+
+      // Get random word based on difficulty
+      function getRandomWord(length) {
+        const filteredWords = wordsList.filter(
+          (word) => word.length === length
+        );
+        return filteredWords[
+          Math.floor(Math.random() * filteredWords.length)
+        ].toUpperCase();
+      }
+
+      // Start the game
+      async function initGame() {
+        await fetchWords(); // Fetch words once at the start
+        const difficulty = difficultySelect.value;
+        wordLength =
+          difficulty === 'easy' ? 4 : difficulty === 'medium' ? 5 : 6;
+        targetWord = getRandomWord(wordLength);
+        maxTurns = 5;
+        guessInput.disabled = false;
+        submitGuess.disabled = false;
+        hintButton.disabled = false;
+        hintsUsed = 0;
+        hintButton.textContent = `Use Hint (${maxHints - hintsUsed} remaining)`;
+        startGame.disabled = true;
+        resetGame.disabled = false;
+        results.innerHTML = '';
+        message.innerHTML = '';
+        currentTurn = 0;
+        turnsLeftDisplay.textContent = maxTurns;
+        displayBestTime();
+        startTimer();
+      }
+
+      // Display the best time for the selected level
+      function displayBestTime() {
+        const difficulty = difficultySelect.value;
+        const storedBestTime =
+          localStorage.getItem(`bestTime-${difficulty}`) || '--';
+        bestTimeDisplay.textContent =
+          storedBestTime === '--' ? '--' : formatTime(parseInt(storedBestTime));
+      }
+
+      // Timer function to track time taken
+      function startTimer() {
+        clearInterval(timerInterval);
+        timeElapsed = 0;
+        timeElapsedDisplay.textContent = formatTime(0);
+        timerInterval = setInterval(() => {
+          timeElapsed++;
+          timeElapsedDisplay.textContent = formatTime(timeElapsed);
+        }, 1000);
+      }
+
+      // Format time in MM:SS format
+      function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const sec = seconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${sec
+          .toString()
+          .padStart(2, '0')}`;
+      }
+
+      // Check guess result
+      function checkGuess(guess) {
+        const result = [];
+        const wordArray = targetWord.split('');
+        const guessArray = guess.toUpperCase().split('');
+
+        for (let i = 0; i < guessArray.length; i++) {
+          if (guessArray[i] === wordArray[i]) {
+            result.push('correct');
+          } else if (wordArray.includes(guessArray[i])) {
+            result.push('present');
+          } else {
+            result.push('absent');
+          }
+        }
+
+        return result;
+      }
+
+      // Display guess result
+      function displayResult(guess, result) {
+        const guessResult = document.createElement('div');
+        guessResult.classList.add('guess-result');
+
+        for (let i = 0; i < guess.length; i++) {
+          const letterDiv = document.createElement('div');
+          letterDiv.textContent = guess[i];
+          letterDiv.classList.add(result[i]);
+          guessResult.appendChild(letterDiv);
+        }
+
+        results.appendChild(guessResult);
+      }
+
+      // Update and store the best time in localStorage
+      function updateBestTime() {
+        const difficulty = difficultySelect.value;
+        const currentBestTime = localStorage.getItem(`bestTime-${difficulty}`);
+        if (!currentBestTime || timeElapsed < parseInt(currentBestTime)) {
+          localStorage.setItem(`bestTime-${difficulty}`, timeElapsed);
+          bestTimeDisplay.textContent = formatTime(timeElapsed);
+        }
+      }
+
+      // Handle hint logic
+      function useHint() {
+        if (hintsUsed < maxHints) {
+          const wordArray = targetWord.split('');
+          const availableIndices = [];
+
+          // Find indices that haven't been guessed correctly
+          for (let i = 0; i < wordArray.length; i++) {
+            const currentGuess =
+              results.querySelectorAll('.guess-result')[
+                results.children.length - 1
+              ]?.children[i];
+            if (!currentGuess || currentGuess.textContent !== wordArray[i]) {
+              availableIndices.push(i);
+            }
+          }
+
+          if (availableIndices.length > 0) {
+            hintsUsed++;
+            hintButton.textContent = `Use Hint (${
+              maxHints - hintsUsed
+            } remaining)`;
+            const randomIndex =
+              availableIndices[
+                Math.floor(Math.random() * availableIndices.length)
+              ];
+            alert(
+              `Hint: The letter "${wordArray[randomIndex]}" is in position ${
+                randomIndex + 1
+              }`
+            );
+          } else {
+            alert('All letters have been revealed.');
+          }
+
+          if (hintsUsed === maxHints) {
+            hintButton.disabled = true;
+          }
+        }
+      }
+
+      // Handle game over (win or lose)
+      function handleGameOver(isWin) {
+        submitGuess.disabled = true;
+        guessInput.disabled = true;
+        clearInterval(timerInterval);
+
+        if (isWin) {
+          message.textContent = `Congratulations! You guessed the word in ${formatTime(
+            timeElapsed
+          )}!`;
+          message.classList.add('win');
+          updateBestTime();
+          triggerConfetti(); // Trigger confetti effect on win
+        } else {
+          message.textContent = `Game Over! The correct word was "${targetWord}".`;
+          message.classList.add('lose');
+        }
+
+        resetGame.disabled = false;
+      }
+
+      // Event listeners
+      submitGuess.addEventListener('click', () => {
+        const guess = guessInput.value.toUpperCase();
+
+        if (guess.length !== wordLength) {
+          alert(`Please enter a ${wordLength}-letter word.`);
+          return;
+        }
+
+        currentTurn++;
+        const result = checkGuess(guess);
+        displayResult(guess, result);
+        turnsLeftDisplay.textContent = maxTurns - currentTurn;
+
+        if (guess === targetWord) {
+          handleGameOver(true);
+        } else if (currentTurn >= maxTurns) {
+          handleGameOver(false);
+        }
+
+        guessInput.value = '';
+      });
+
+      // Reset game function
+      function resetGameFunction() {
+        guessInput.disabled = true;
+        submitGuess.disabled = true;
+        startGame.disabled = false;
+        resetGame.disabled = true;
+        results.innerHTML = '';
+        message.innerHTML = '';
+        clearInterval(timerInterval);
+        timeElapsedDisplay.textContent = '00:00';
+        turnsLeftDisplay.textContent = maxTurns;
+        displayBestTime();
+      }
+
+      // Reset the game when the difficulty level is changed
+      difficultySelect.addEventListener('change', () => {
+        resetGameFunction(); // Reset game on difficulty change
+      });
+
+      hintButton.addEventListener('click', () => {
+        useHint();
+      });
+
+      startGame.addEventListener('click', () => {
+        initGame();
+      });
+
+      resetGame.addEventListener('click', () => {
+        location.reload();
+      });
+
+      // Confetti effect on win
+      function triggerConfetti() {
+        for (let i = 0; i < 100; i++) {
+          const confetti = document.createElement('div');
+          confetti.classList.add('confetti');
+          confetti.style.backgroundColor = getRandomColor();
+          confetti.style.left = `${Math.random() * 100}vw`;
+          confettiContainer.appendChild(confetti);
+
+          setTimeout(() => {
+            confetti.remove();
+          }, 2000);
+        }
+      }
+
+      // Get random color for confetti
+      function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+    </script>
+  </body>
+</html>
