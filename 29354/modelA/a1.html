@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Challenge Game</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f9;
+            font-family: 'Arial', sans-serif;
+        }
+        .game-container {
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #equation {
+            font-size: 2em;
+            margin: 20px 0;
+        }
+        #timer {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>Math Challenge</h1>
+    <p id="equation"></p>
+    <input type="number" id="answer" placeholder="Your answer" />
+    <p>Time: <span id="timer">30</span>s</p>
+    <p>Score: <span id="score">0</span> | Multiplier: <span id="multiplier">x1</span></p>
+    <button id="startButton" class="btn btn-primary">Start Game</button>
+    <button id="resetButton" class="btn btn-secondary" style="display:none;">Reset Game</button>
+</div>
+
+<script>
+    // Game logic
+    let timeLeft = 30, score = 0, multiplier = 1, correctAnswers = 0, difficulty = 1, timerId;
+
+    function generateEquation() {
+        let num1 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+        let num2 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+        let operations = ['+', '-', '*', '/'];
+        let op = operations[Math.floor(Math.random() * operations.length)];
+        // Ensure division results in whole numbers for simplicity
+        if (op === '/') {
+            while (num2 === 0 || num1 % num2 !== 0) {
+                num2 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+            }
+        }
+        return { equation: `${num1} ${op} ${num2}`, result: eval(`${num1} ${op} ${num2}`) };
+    }
+
+    function updateGame() {
+        if (timeLeft > 0) {
+            document.getElementById('timer').textContent = timeLeft;
+        } else {
+            endGame();
+        }
+    }
+
+    function startTimer() {
+        timerId = setInterval(() => {
+            timeLeft--;
+            updateGame();
+        }, 1000);
+    }
+
+    function endGame() {
+        clearInterval(timerId);
+        alert('Game Over! Your score: ' + score);
+        document.getElementById('startButton').style.display = 'inline';
+        document.getElementById('resetButton').style.display = 'none';
+    }
+
+    function checkAnswer() {
+        const userAnswer = parseFloat(document.getElementById('answer').value);
+        const {result} = generateEquation();
+        if (userAnswer === result) {
+            correctAnswers++;
+            if (correctAnswers % 10 === 0) difficulty++;
+            timeLeft += 2;
+            score += 10 * multiplier;
+            multiplier = Math.min(multiplier + 1, 5); // Cap multiplier for simplicity
+        } else {
+            endGame();
+            return;
+        }
+        document.getElementById('score').textContent = score;
+        document.getElementById('multiplier').textContent = 'x' + multiplier;
+        document.getElementById('equation').textContent = generateEquation().equation;
+        document.getElementById('answer').value = '';
+        updateGame();
+    }
+
+    document.getElementById('startButton').addEventListener('click', function() {
+        document.getElementById('equation').textContent = generateEquation().equation;
+        startTimer();
+        this.style.display = 'none';
+        document.getElementById('resetButton').style.display = 'inline';
+    });
+
+    document.getElementById('answer').addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') checkAnswer();
+    });
+
+    document.getElementById('resetButton').addEventListener('click', function() {
+        timeLeft = 30; score = 0; multiplier = 1; correctAnswers = 0; difficulty = 1;
+        clearInterval(timerId);
+        document.getElementById('timer').textContent = timeLeft;
+        document.getElementById('score').textContent = score;
+        document.getElementById('multiplier').textContent = 'x1';
+        this.style.display = 'none';
+        document.getElementById('startButton').style.display = 'inline';
+    });
+</script>
+
+</body>
+</html>

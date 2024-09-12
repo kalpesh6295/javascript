@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Challenge Game</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+        margin: 0;
+    }
+    #game-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    #equation, #timer, #score, #combo {
+        margin: 10px 0;
+        font-size: 24px;
+    }
+    input[type="number"] {
+        font-size: 20px;
+        padding: 5px;
+        width: 100px;
+    }
+    button {
+        font-size: 18px;
+        margin: 10px;
+        padding: 10px 20px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="equation">2 + 2 = ?</div>
+    <input type="number" id="answerInput" placeholder="Your answer">
+    <button onclick="submitAnswer()">Submit</button>
+    <button onclick="resetGame()">Reset</button>
+    <div id="timer">Time: 30</div>
+    <div id="score">Score: 0</div>
+    <div id="combo">Combo: x1</div>
+</div>
+
+<script>
+let timeLeft = 30;
+let score = 0;
+let combo = 1;
+let correctAnswers = 0;
+let difficulty = 1;
+
+function generateEquation() {
+    const operations = ['+', '-', '*', '/'];
+    let num1 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+    let num2 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+    let operation = operations[Math.floor(Math.random() * operations.length)];
+    
+    // Ensure division results in whole numbers for simplicity
+    if (operation === '/') {
+        num2 = num2 * num1; // Make sure num1 is divisible by num2
+    }
+
+    const equation = `${num1} ${operation} ${num2}`;
+    const result = eval(equation);
+    return {equation, result};
+}
+
+let currentEquation = generateEquation();
+
+function updateDisplay() {
+    $('#equation').text(currentEquation.equation + " = ?");
+    $('#timer').text(`Time: ${timeLeft}`);
+    $('#score').text(`Score: ${score}`);
+    $('#combo').text(`Combo: x${combo}`);
+}
+
+function submitAnswer() {
+    const userAnswer = parseInt($('#answerInput').val(), 10);
+    if (userAnswer === currentEquation.result) {
+        score += 10 * combo;
+        timeLeft += 2;
+        correctAnswers++;
+        if (correctAnswers % 10 === 0) difficulty++;
+        combo++;
+        currentEquation = generateEquation();
+    } else {
+        alert("Game Over! Your score: " + score);
+        resetGame();
+    }
+    updateDisplay();
+    $('#answerInput').val('').focus();
+}
+
+function resetGame() {
+    timeLeft = 30;
+    score = 0;
+    combo = 1;
+    correctAnswers = 0;
+    difficulty = 1;
+    currentEquation = generateEquation();
+    updateDisplay();
+    clearInterval(gameInterval);
+    gameInterval = setInterval(countDown, 1000);
+}
+
+function countDown() {
+    if (timeLeft > 0) {
+        timeLeft--;
+        updateDisplay();
+    } else {
+        alert("Time's up! Your score: " + score);
+        resetGame();
+    }
+}
+
+let gameInterval = setInterval(countDown, 1000);
+updateDisplay();
+</script>
+
+</body>
+</html>
