@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equation Builder Game</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+<style>
+body { font-family: 'Arial', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; margin: 0; }
+#game-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+#equation, #target, #timer, #score, #combo { margin: 10px 0; }
+#choices div { display: inline-block; margin: 5px; padding: 10px; background: #e0e0e0; cursor: pointer; border-radius: 5px; }
+#choices div:hover { background: #d0d0d0; }
+#game-over { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); color: white; justify-content: center; align-items: center; flex-direction: column; }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <div id="target">Target: <span></span></div>
+    <div id="equation">Equation: <span></span></div>
+    <div id="choices"></div>
+    <div id="timer">Time: <span>10</span>s</div>
+    <div id="score">Score: <span>0</span></div>
+    <div id="combo">Combo: <span>x1</span></div>
+</div>
+<div id="game-over">
+    <h2>Game Over</h2>
+    <button onclick="resetGame()">Restart</button>
+</div>
+
+<script>
+let target, currentEquation = '', timeLeft = 10, score = 0, combo = 1, incorrectCount = 0, intervalId;
+const choices = document.getElementById('choices');
+const targetDisplay = document.getElementById('target').querySelector('span');
+const equationDisplay = document.getElementById('equation').querySelector('span');
+const timerDisplay = document.getElementById('timer').querySelector('span');
+const scoreDisplay = document.getElementById('score').querySelector('span');
+const comboDisplay = document.getElementById('combo').querySelector('span');
+const gameOverScreen = document.getElementById('game-over');
+
+function initializeGame() {
+    clearInterval(intervalId);
+    timeLeft = 10;
+    score = 0;
+    combo = 1;
+    incorrectCount = 0;
+    generateProblem();
+    updateDisplay();
+    intervalId = setInterval(updateTimer, 1000);
+}
+
+function generateProblem() {
+    target = Math.floor(Math.random() * (combo * 10)) + 1; // Increase difficulty with combo
+    targetDisplay.textContent = target;
+    let ops = ['+', '-', '*', '/', '(', ')'];
+    if (combo > 3) ops.push('^'); // Introduce powers after a few levels
+    currentEquation = '';
+    choices.innerHTML = '';
+    for(let i = 0; i < 7; i++) {
+        if(Math.random() < 0.7) { // 70% chance for number, 30% for operator
+            choices.innerHTML += `<div onclick="addToEquation(${Math.floor(Math.random() * 10)})">${Math.floor(Math.random() * 10)}</div>`;
+        } else {
+            choices.innerHTML += `<div onclick="addToEquation('${ops[Math.floor(Math.random() * ops.length)]}')">${ops[Math.floor(Math.random() * ops.length)]}</div>`;
+        }
+    }
+}
+
+function addToEquation(item) {
+    currentEquation += item;
+    updateEquationDisplay();
+}
+
+function checkEquation() {
+    try {
+        if(eval(currentEquation.replace('^', '**')) == target) {
+            score += 10 * combo;
+            combo += 1;
+            timeLeft += 2;
+            generateProblem();
+        } else {
+            incorrectCount++;
+            combo = 1; // Reset combo on incorrect answer
+            if(incorrectCount >= 3) endGame();
+        }
+    } catch(e) {
+        // Handle syntax errors in equation
+        incorrectCount++;
+        combo = 1;
+        if(incorrectCount >= 3) endGame();
+    }
+    updateDisplay();
+}
+
+function updateEquationDisplay() {
+    equationDisplay.textContent = currentEquation;
+}
+
+function updateDisplay() {
+    scoreDisplay.textContent = score;
+    comboDisplay.textContent = `x${combo}`;
+    timerDisplay.textContent = timeLeft;
+}
+
+function updateTimer() {
+    if(timeLeft > 0) {
+        timeLeft--;
+        updateDisplay();
+    } else {
+        endGame();
+    }
+}
+
+function endGame() {
+    clearInterval(intervalId);
+    gameOverScreen.style.display = 'flex';
+}
+
+function resetGame() {
+    gameOverScreen.style.display = 'none';
+    initializeGame();
+}
+
+initializeGame();
+</script>
+</body>
+</html>

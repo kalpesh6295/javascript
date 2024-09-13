@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Equation Builder Game</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; }
+    #game-container {
+        max-width: 600px;
+        margin: 20px auto;
+        text-align: center;
+        padding: 20px;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+    }
+    .button-group button {
+        margin: 5px;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    #equation, #target, #timer, #score, #combo {
+        font-size: 20px;
+        margin: 10px 0;
+    }
+    #result {
+        color: green;
+        font-weight: bold;
+    }
+    #error {
+        color: red;
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="timer">Time: 10</div>
+    <div id="target">Target: <span></span></div>
+    <div id="equation"></div>
+    <div id="score">Score: 0</div>
+    <div id="combo">Combo: x1</div>
+    <div class="button-group" id="numbers"></div>
+    <div class="button-group" id="operators">
+        <button>+</button><button>-</button><button>*</button><button>/</button>
+        <button>(</button><button>)</button>
+    </div>
+    <button onclick="submitEquation()">Submit</button>
+    <button onclick="resetGame()">Reset</button>
+    <div id="result"></div>
+    <div id="error"></div>
+</div>
+
+<script>
+let timeLeft = 10, score = 0, combo = 1, difficulty = 1, mistakes = 0;
+let currentEquation = [], targetNumber;
+
+function startGame() {
+    setupGame();
+    updateDisplay();
+    let gameInterval = setInterval(() => {
+        if (timeLeft > 0) {
+            timeLeft--;
+            updateDisplay();
+        } else {
+            gameOver();
+            clearInterval(gameInterval);
+        }
+    }, 1000);
+}
+
+function setupGame() {
+    targetNumber = Math.floor(Math.random() * (10 * difficulty) + 10);
+    $('#target span').text(targetNumber);
+    generateButtons();
+}
+
+function generateButtons() {
+    let nums = Array.from({length: 4 + difficulty}, () => Math.floor(Math.random() * 10) + 1);
+    $('#numbers').html(nums.map(num => `<button onclick="addToEquation(${num})">${num}</button>`).join(''));
+}
+
+function addToEquation(value) {
+    currentEquation.push(value);
+    updateEquationDisplay();
+}
+
+function updateEquationDisplay() {
+    $('#equation').text(currentEquation.join(' '));
+}
+
+function submitEquation() {
+    let equationString = currentEquation.join('');
+    try {
+        if (eval(equationString) === targetNumber) {
+            $('#result').text('Correct!');
+            score += 10 * combo;
+            if (combo < 5) combo++;
+            timeLeft += 2;
+            if (score % 50 === 0) difficulty++;
+            currentEquation = [];
+            setupGame();
+        } else {
+            $('#error').text('Incorrect equation');
+            handleMistake();
+        }
+    } catch (e) {
+        $('#error').text('Invalid equation');
+        handleMistake();
+    }
+    updateDisplay();
+}
+
+function handleMistake() {
+    mistakes++;
+    combo = 1;
+    if (mistakes >= 3) gameOver();
+}
+
+function gameOver() {
+    alert('Game Over! Your score: ' + score);
+    resetGame();
+}
+
+function resetGame() {
+    timeLeft = 10;
+    score = 0;
+    combo = 1;
+    difficulty = 1;
+    mistakes = 0;
+    currentEquation = [];
+    setupGame();
+    updateDisplay();
+}
+
+function updateDisplay() {
+    $('#timer').text('Time: ' + timeLeft);
+    $('#score').text('Score: ' + score);
+    $('#combo').text('Combo: x' + combo);
+    $('#equation').text(currentEquation.join(' '));
+    $('#result').text('');
+    $('#error').text('');
+}
+
+startGame();
+</script>
+
+</body>
+</html>
