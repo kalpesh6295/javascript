@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Math Equation Grid Game</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    #gameArea {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        padding: 20px;
+    }
+    .equation {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+    }
+    .equation:hover {
+        background-color: #e9ecef;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="text-center">Math Equation Grid Game</h1>
+    <div id="status" class="text-center mb-3">
+        <span>Score: <span id="score">0</span></span> | 
+        <span>Lives: <span id="lives">3</span></span>
+    </div>
+    <div id="gameArea"></div>
+    <div class="text-center mt-3">
+        <button id="restartBtn" class="btn btn-primary" style="display:none;">Restart Game</button>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
+    const livesDisplay = document.getElementById('lives');
+    const restartBtn = document.getElementById('restartBtn');
+    let score = 0, lives = 3, targetNumber, equations, correctEquations;
+
+    function generateEquations() {
+        targetNumber = Math.floor(Math.random() * 50) + 1;
+        equations = [];
+        correctEquations = Math.floor(Math.random() * 5) + 4; // 4 to 8 correct equations
+        for (let i = 0; i < 12; i++) { // Generate 12 equations in total
+            let equation = '';
+            if (i < correctEquations) {
+                equation = generateCorrectEquation(targetNumber);
+            } else {
+                equation = generateIncorrectEquation(targetNumber);
+            }
+            equations.push(equation);
+        }
+        // Shuffle equations
+        equations.sort(() => Math.random() - 0.5);
+        displayEquations();
+    }
+
+    function generateCorrectEquation(target) {
+        let a = Math.floor(Math.random() * target) + 1;
+        let b = target - a;
+        return `${a} + ${b} = ${target}`;
+    }
+
+    function generateIncorrectEquation(target) {
+        let result = target;
+        let a, b;
+        while(result === target) {
+             a = Math.floor(Math.random() * 50) + 1;
+             b = Math.floor(Math.random() * 50) + 1;
+            result = Math.floor(Math.random() * 4) < 2 ? a + b : a - b; // Addition or Subtraction
+        }
+        return `${a} + ${b} = ${result}`; // Simplifying to addition for brevity
+    }
+
+    function displayEquations() {
+        gameArea.innerHTML = '';
+        equations.forEach(eq => {
+            let div = document.createElement('div');
+            div.className = 'equation';
+            div.textContent = eq;
+            div.onclick = () => checkEquation(eq);
+            gameArea.appendChild(div);
+        });
+    }
+
+    function checkEquation(equation) {
+        if (equation.includes(`= ${targetNumber}`)) {
+            score++;
+            scoreDisplay.textContent = score;
+            correctEquations--;
+        } else {
+            lives--;
+            livesDisplay.textContent = lives;
+        }
+        if (lives === 0 || correctEquations === 0) {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        gameArea.innerHTML = `<h2>Game Over! Your score: ${score}</h2>`;
+        restartBtn.style.display = 'block';
+    }
+
+    restartBtn.onclick = function() {
+        score = 0;
+        lives = 3;
+        scoreDisplay.textContent = score;
+        livesDisplay.textContent = lives;
+        this.style.display = 'none';
+        generateEquations();
+    };
+
+    // Start the game
+    generateEquations();
+</script>
+
+</body>
+</html>

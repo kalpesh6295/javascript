@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Equation Grid Game</title>
+
+    <!-- Bootstrap CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+        background-color: #f0f4f8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Poppins', sans-serif;
+      }
+
+      .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        padding: 40px;
+        width: 500px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 100px);
+        grid-template-rows: repeat(4, 100px);
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .grid-item {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        border: 2px solid #3498db;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .grid-item:hover {
+        background-color: #dff0ea;
+      }
+
+      .info-box {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 20px;
+      }
+
+      .info-box div {
+        font-size: 18px;
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 10px;
+        text-align: center;
+        flex: 1;
+        margin: 0 5px;
+      }
+
+      .target-number {
+        font-size: 30px;
+        color: #e74c3c;
+        font-weight: bold;
+      }
+
+      .message {
+        margin-top: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      button {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 18px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #c0392b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="info-box">
+        <div>Lives: <span id="lives">3</span></div>
+        <div class="target-number">Target: <span id="targetNumber"></span></div>
+        <div>Score: <span id="score">0</span></div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+      <div id="message" class="message"></div>
+
+      <button id="restartGame" style="display: none">Restart Game</button>
+    </div>
+
+    <script>
+      const grid = document.getElementById('grid');
+      const targetNumberElement = document.getElementById('targetNumber');
+      const livesElement = document.getElementById('lives');
+      const scoreElement = document.getElementById('score');
+      const messageElement = document.getElementById('message');
+      const restartButton = document.getElementById('restartGame');
+
+      let targetNumber;
+      let lives = 3;
+      let score = 0;
+      let correctEquationsCount = 0;
+      let correctCount = 0;
+
+      // Generates a random target number between 1 and 50
+      function generateTargetNumber() {
+        targetNumber = Math.floor(Math.random() * 50) + 1;
+        targetNumberElement.textContent = targetNumber;
+      }
+
+      // Generates a correct addition equation based on the target number
+      function generateAdditionEquation() {
+        const num1 = Math.floor(Math.random() * targetNumber);
+        const num2 = targetNumber - num1;
+        return `${num1} + ${num2}`;
+      }
+
+      // Generates a correct subtraction equation based on the target number
+      function generateSubtractionEquation() {
+        const num1 = targetNumber + Math.floor(Math.random() * 10) + 1;
+        const num2 = num1 - targetNumber;
+        return `${num1} - ${num2}`;
+      }
+
+      // Generates a correct multiplication equation based on the target number
+      function generateMultiplicationEquation() {
+        const divisors = [];
+        // Finds all divisors of the target number
+        for (let i = 1; i <= targetNumber; i++) {
+          if (targetNumber % i === 0) {
+            divisors.push(i);
+          }
+        }
+        // Randomly picks two numbers to generate a multiplication equation
+        const num1 = divisors[Math.floor(Math.random() * divisors.length)];
+        const num2 = targetNumber / num1;
+        return `${num1} * ${num2}`;
+      }
+
+      // Generates a correct division equation based on the target number
+      function generateDivisionEquation() {
+        const multiplier = Math.floor(Math.random() * 10) + 1;
+        const num1 = targetNumber * multiplier;
+        return `${num1} / ${multiplier}`;
+      }
+
+      // Generates an incorrect equation that doesn't equal the target number
+      function generateIncorrectEquation() {
+        let incorrectEquation;
+        let result;
+
+        // Loop to ensure the incorrect equation doesn't match the target number
+        do {
+          const num1 = Math.floor(Math.random() * 50);
+          const num2 = Math.floor(Math.random() * 50);
+          const randomOperator = ['+', '-', '*', '/'][
+            Math.floor(Math.random() * 4)
+          ];
+          incorrectEquation = `${num1} ${randomOperator} ${num2}`;
+          result = Math.round(eval(incorrectEquation)); // Evaluate the equation
+        } while (result === targetNumber); // Continue generating until it doesn't match target number
+
+        return incorrectEquation;
+      }
+
+      // Populates the grid with correct and incorrect equations
+      function populateGrid() {
+        grid.innerHTML = '';
+        correctEquationsCount = 0;
+
+        const correctEquations = [];
+        const incorrectEquations = [];
+
+        // Generate 4-8 correct equations
+        correctCount = Math.floor(Math.random() * 5) + 4; // Between 4-8 correct equations
+
+        for (let i = 0; i < correctCount; i++) {
+          const randomEquation = [
+            generateAdditionEquation,
+            generateSubtractionEquation,
+            generateMultiplicationEquation,
+            generateDivisionEquation,
+          ][Math.floor(Math.random() * 4)](); // Randomly selects an equation type
+          correctEquations.push(randomEquation);
+        }
+
+        // Generate incorrect equations for the rest of the grid
+        for (let i = 0; i < 16 - correctCount; i++) {
+          incorrectEquations.push(generateIncorrectEquation());
+        }
+
+        // Randomly shuffle and display the equations in the grid
+        const allEquations = [...correctEquations, ...incorrectEquations].sort(
+          () => Math.random() - 0.5
+        );
+
+        // Display equations in grid cells
+        allEquations.forEach((equation) => {
+          const gridItem = document.createElement('div');
+          gridItem.classList.add('grid-item');
+          gridItem.textContent = equation;
+          gridItem.addEventListener('click', () =>
+            checkAnswer(equation, gridItem)
+          );
+          grid.appendChild(gridItem);
+        });
+      }
+
+      // Checks if the clicked equation is correct
+      function checkAnswer(equation, gridItem) {
+        const result = Math.round(eval(equation)); // Evaluate the equation
+        if (result === targetNumber) {
+          score++;
+          correctEquationsCount++;
+          scoreElement.textContent = score;
+          gridItem.remove(); // Remove the clicked correct equation
+
+          // If all correct equations are found, move to the next round
+          if (correctEquationsCount === correctCount) {
+            messageElement.textContent = 'Correct! Moving to next round...';
+            setTimeout(() => {
+              resetGrid();
+              messageElement.textContent = '';
+            }, 1000);
+          }
+        } else {
+          lives--;
+          livesElement.textContent = lives;
+          messageElement.textContent = `Wrong! You have ${lives} lives left.`;
+
+          // If lives reach 0, end the game
+          if (lives <= 0) {
+            endGame();
+          }
+        }
+      }
+
+      // Resets the grid and starts a new round
+      function resetGrid() {
+        generateTargetNumber();
+        populateGrid();
+      }
+
+      // Ends the game and displays the final score
+      function endGame() {
+        messageElement.textContent = `Game Over! Your final score is ${score}`;
+        grid.innerHTML = ''; // Clears the grid
+        restartButton.style.display = 'block'; // Shows the restart button
+      }
+
+      // Restarts the game when the restart button is clicked
+      restartButton.addEventListener('click', () => {
+        lives = 3;
+        score = 0;
+        livesElement.textContent = lives;
+        scoreElement.textContent = score;
+        messageElement.textContent = '';
+        restartButton.style.display = 'none';
+        resetGrid();
+      });
+
+      // Initializes the game by setting the target number and populating the grid
+      resetGrid();
+    </script>
+  </body>
+</html>
