@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Letter Challenge</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background-color: #f1f2f6;
+      background: linear-gradient(135deg, #ff9ff3, #feca57, #48dbfb, #1dd1a1);
+      background-size: 300% 300%;
+      animation: gradientBackground 10s ease infinite;
+    }
+
+    @keyframes gradientBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: white;
+      border-radius: 20px;
+      padding: 50px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      width: 500px;
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .info-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 40px;
+    }
+
+    .info-box {
+      padding: 15px;
+      border-radius: 15px;
+      width: 22%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      font-weight: bold;
+      margin: 0 5px;
+      color: #2c3e50;
+    }
+
+    .score-box { background-color: #74b9ff; }   /* Blue for score */
+    .best-score-box { background-color: #ff7675; } /* Red for best score */
+    .lives-box { background-color: #55efc4; }   /* Green for lives */
+    .time-box { background-color: #ffeaa7; }    /* Yellow for time left */
+
+    .word-display {
+      font-size: 52px;
+      margin-bottom: 40px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #34495e;
+    }
+
+    .buttons-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 30px;
+    }
+
+    .color-button {
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      background-color: #f8f9fa;
+      color: black;
+      transition: transform 0.2s, box-shadow 0.3s, background-color 0.3s;
+      width: 48%;
+    }
+
+    .color-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      background-color: #ffeaa7;
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .start-button {
+      padding: 15px 40px;
+      font-size: 20px;
+      background-color: #00b894;
+      border: none;
+      border-radius: 15px;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+      width: 48%;
+    }
+
+    .restart-button {
+      padding: 15px 40px;
+      font-size: 20px;
+      background-color: #e17055;
+      border: none;
+      border-radius: 15px;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+      width: 48%;
+    }
+
+    .start-button:hover {
+      background-color: #00917c;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .restart-button:hover {
+      background-color: #d35400;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <div class="info-container">
+      <div class="info-box score-box">Score: <span id="score">0</span></div>
+      <div class="info-box best-score-box">Best Score: <span id="bestScore">0</span></div>
+      <div class="info-box lives-box">Lives: <span id="lives">3</span></div>
+      <div class="info-box time-box">Time left: <span id="timeLeft">5</span>s</div>
+    </div>
+
+    <div id="wordDisplay" class="word-display">Click Start</div>
+
+    <div class="buttons-container">
+      <button id="colorButton1" class="color-button" disabled></button>
+      <button id="colorButton2" class="color-button" disabled></button>
+    </div>
+
+    <div class="action-buttons">
+      <button id="startButton" class="start-button">Start Game</button>
+      <button id="restartButton" class="restart-button" disabled>Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const colors = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown"];
+    const wordDisplay = document.getElementById("wordDisplay");
+    const colorButton1 = document.getElementById("colorButton1");
+    const colorButton2 = document.getElementById("colorButton2");
+    const scoreDisplay = document.getElementById("score");
+    const livesDisplay = document.getElementById("lives");
+    const timeLeftDisplay = document.getElementById("timeLeft");
+    const bestScoreDisplay = document.getElementById("bestScore");
+    const startButton = document.getElementById("startButton");
+    const restartButton = document.getElementById("restartButton");
+
+    let score = 0;
+    let lives = 3;
+    let timeLeft = 5;
+    let correctColor = "";
+    let timerInterval;
+    let bestScore = localStorage.getItem("bestScore") || 0;
+    bestScoreDisplay.textContent = bestScore;
+
+    // Timer function
+    function startTimer() {
+      clearInterval(timerInterval);
+      timeLeft = 5;
+      timeLeftDisplay.textContent = timeLeft;
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timeLeftDisplay.textContent = timeLeft;
+        if (timeLeft === 0) {
+          loseLife();
+          setupNextRound();
+        }
+      }, 1000);
+    }
+
+    // Function to start the next round
+    function setupNextRound() {
+      const randomColors = generateTwoUniqueColors(); // Two unique colors for the buttons
+      correctColor = randomColors[0]; // This is the color of the displayed word
+
+      // Display a random word (with a different color)
+      wordDisplay.textContent = getDifferentColor(correctColor).toUpperCase(); // The text is a different color name
+      wordDisplay.style.color = correctColor; // The color of the displayed word is the correct answer
+
+      // Randomly assign the correct answer to either button 1 or button 2
+      const randomAssign = Math.random() < 0.5;
+      if (randomAssign) {
+        assignButtonColors(colorButton1, correctColor, true);
+        assignButtonColors(colorButton2, randomColors[1], false);
+      } else {
+        assignButtonColors(colorButton2, correctColor, true);
+        assignButtonColors(colorButton1, randomColors[1], false);
+      }
+
+      startTimer();
+    }
+
+    // Function to assign colors to buttons ensuring the background is different from the text
+    function assignButtonColors(button, buttonColor, isCorrect) {
+      if (isCorrect) {
+        button.textContent = correctColor.toUpperCase(); // Text is the correct color name
+      } else {
+        button.textContent = buttonColor.toUpperCase(); // Display incorrect color name
+      }
+      button.style.backgroundColor = getDifferentColor(button.textContent.toLowerCase()); // Background doesn't match text
+      button.disabled = false; // Enable buttons during the round
+    }
+
+    // Function to handle button clicks
+    colorButton1.addEventListener("click", () => handleButtonClick(colorButton1.textContent.toLowerCase()));
+    colorButton2.addEventListener("click", () => handleButtonClick(colorButton2.textContent.toLowerCase()));
+
+    function handleButtonClick(selectedColorName) {
+      if (selectedColorName === correctColor) {
+        score++;
+        scoreDisplay.textContent = score;
+        setupNextRound();
+      } else {
+        loseLife();
+      }
+    }
+
+    // Lose life logic
+    function loseLife() {
+      lives--;
+      livesDisplay.textContent = lives;
+      if (lives === 0) {
+        clearInterval(timerInterval);
+        alert("Game Over! Final Score: " + score);
+        updateBestScore();
+        resetGame();
+      } else {
+        setupNextRound();
+      }
+    }
+
+    // Function to reset the game
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      scoreDisplay.textContent = score;
+      livesDisplay.textContent = lives;
+      wordDisplay.textContent = "Click Start";
+      colorButton1.disabled = true;
+      colorButton2.disabled = true;
+      startButton.disabled = false;
+      restartButton.disabled = true;
+    }
+
+    // Update best score using localStorage
+    function updateBestScore() {
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("bestScore", bestScore);
+        bestScoreDisplay.textContent = bestScore;
+      }
+    }
+
+    // Function to generate two unique random colors for the buttons
+    function generateTwoUniqueColors() {
+      let chosenColors = [];
+      while (chosenColors.length < 2) {
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        if (!chosenColors.includes(randomColor)) {
+          chosenColors.push(randomColor);
+        }
+      }
+      return chosenColors;
+    }
+
+    // Function to get a different color for the text (so it doesn't match the background)
+    function getDifferentColor(currentColor) {
+      let otherColors = colors.filter(c => c !== currentColor);
+      return otherColors[Math.floor(Math.random() * otherColors.length)];
+    }
+
+    // Start the game on Start button click
+    startButton.addEventListener("click", () => {
+      startButton.disabled = true; // Disable the start button after the game starts
+      restartButton.disabled = false; // Enable the restart button
+      setupNextRound();
+    });
+
+    // Restart the game
+    restartButton.addEventListener("click", () => {
+      resetGame();
+    });
+
+    // Initialize game with buttons disabled until the game starts
+    colorButton1.disabled = true;
+    colorButton2.disabled = true;
+  </script>
+</body>
+</html>

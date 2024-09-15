@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Color Challenge Game</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body, .btn {
+            font-size: 1.5rem;
+        }
+        #wordDisplay {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .game-area {
+            text-align: center;
+            padding: 50px 0;
+        }
+        #timer {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container game-area">
+    <h1>Color Challenge</h1>
+    <div id="wordDisplay">Word</div>
+    <div id="buttons"></div>
+    <div id="status">
+        <p>Score: <span id="score">0</span> | Lives: <span id="lives">3</span> | Best Score: <span id="bestScore">0</span></p>
+        <p>Time left: <span id="timer">5</span>s</p>
+    </div>
+</div>
+
+<script>
+// Game logic
+const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'brown', 'cyan', 'magenta'];
+let score = 0, lives = 3, timer, bestScore = localStorage.getItem('colorGameBestScore') || 0;
+const wordDisplay = document.getElementById('wordDisplay');
+const buttonsDiv = document.getElementById('buttons');
+const scoreDisplay = document.getElementById('score');
+const livesDisplay = document.getElementById('lives');
+const bestScoreDisplay = document.getElementById('bestScore');
+const timerDisplay = document.getElementById('timer');
+
+function randomColor() {
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function updateDisplay() {
+    clearInterval(timer);
+    let colorWord = randomColor();
+    let colorText = randomColor();
+    while(colorWord === colorText) colorText = randomColor(); // Ensure different color
+    
+    wordDisplay.textContent = colorWord;
+    wordDisplay.style.color = colorText;
+
+    let correctAnswer = Math.random() < 0.5 ? 0 : 1;
+    let buttons = document.querySelectorAll('.color-btn');
+    buttons[correctAnswer].textContent = colorText;
+    buttons[1 - correctAnswer].textContent = randomColor();
+
+    buttons.forEach(btn => {
+        btn.style.backgroundColor = randomColor();
+        btn.style.color = 'black';
+    });
+
+    let timeLeft = 5;
+    timerDisplay.textContent = timeLeft;
+    timer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) gameOver(true);
+    }, 1000);
+}
+
+function gameOver(timeout = false) {
+    clearInterval(timer);
+    if (timeout || --lives === 0) {
+        if (score > bestScore) {
+            localStorage.setItem('colorGameBestScore', score);
+            bestScore = score;
+            bestScoreDisplay.textContent = bestScore;
+        }
+        alert(`Game Over! Your score: ${score}. Best Score: ${bestScore}`);
+        lives = 3;
+        livesDisplay.textContent = lives;
+        document.body.innerHTML += '<button onclick="location.reload()" class="btn btn-primary">Restart Game</button>';
+    } else {
+        updateDisplay();
+    }
+}
+
+function setupButtons() {
+    buttonsDiv.innerHTML = '';
+    for (let i = 0; i < 2; i++) {
+        let btn = document.createElement('button');
+        btn.className = 'btn btn-lg color-btn m-2';
+        btn.onclick = function() { 
+            if (this.textContent === wordDisplay.style.color) {
+                score++;
+                scoreDisplay.textContent = score;
+            } else {
+                gameOver();
+            }
+            updateDisplay();
+        };
+        buttonsDiv.appendChild(btn);
+    }
+    updateDisplay();
+}
+
+setupButtons();
+</script>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

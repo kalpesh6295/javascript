@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Challenge Game</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+        margin: 0;
+    }
+    #game-container {
+        text-align: center;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #colorDisplay {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    .button {
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 1em;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        color: black;
+    }
+    #stats {
+        margin-top: 20px;
+        font-size: 1.2em;
+    }
+    #timer {
+        margin-top: 10px;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>Color Challenge</h1>
+    <div id="colorDisplay">Color</div>
+    <button class="button" id="button1"></button>
+    <button class="button" id="button2"></button>
+    <div id="stats">
+        <div>Lives: <span id="lives">3</span></div>
+        <div>Score: <span id="score">0</span></div>
+        <div>Best Score: <span id="bestScore">0</span></div>
+    </div>
+    <div id="timer">Time: 5</div>
+</div>
+
+<script>
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'brown', 'grey', 'black'];
+    let score = 0, lives = 3, timer, gameInterval, bestScore = localStorage.getItem('bestScoreColorGame') || 0;
+    
+    function startGame() {
+        updateBestScore();
+        nextRound();
+    }
+
+    function nextRound() {
+        clearInterval(gameInterval);
+        let timeLeft = 5;
+        document.getElementById('timer').textContent = `Time: ${timeLeft}`;
+        
+        let displayColor = colors[Math.floor(Math.random() * colors.length)];
+        let textColor = colors[Math.floor(Math.random() * colors.length)];
+        while (textColor === displayColor) {
+            textColor = colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        document.getElementById('colorDisplay').textContent = displayColor;
+        document.getElementById('colorDisplay').style.color = textColor;
+        
+        let correctAnswer = Math.random() < 0.5 ? 0 : 1;
+        let [button1, button2] = [document.getElementById('button1'), document.getElementById('button2')];
+        button1.textContent = correctAnswer ? textColor : colors[Math.floor(Math.random() * colors.length)];
+        button2.textContent = correctAnswer ? colors[Math.floor(Math.random() * colors.length)] : textColor;
+        
+        [button1.style.backgroundColor, button2.style.backgroundColor] = [colors[Math.floor(Math.random() * colors.length)], colors[Math.floor(Math.random() * colors.length)]];
+        
+        gameInterval = setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Time: ${timeLeft}`;
+            } else {
+                loseLife();
+            }
+        }, 1000);
+    }
+
+    function checkAnswer(isCorrect) {
+        if (isCorrect) {
+            score++;
+            document.getElementById('score').textContent = score;
+        } else {
+            loseLife();
+        }
+        if (lives > 0) {
+            nextRound();
+        } else {
+            endGame();
+        }
+    }
+
+    function loseLife() {
+        lives--;
+        document.getElementById('lives').textContent = lives;
+        if (lives <= 0) {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        alert(`Game Over! Your score: ${score}`);
+        if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('bestScoreColorGame', bestScore);
+        }
+        document.getElementById('button1').style.display = 'none';
+        document.getElementById('button2').style.display = 'none';
+        document.getElementById('colorDisplay').textContent = "Game Over";
+        let restart = document.createElement('button');
+        restart.textContent = 'Restart';
+        restart.onclick = () => location.reload();
+        document.getElementById('game-container').appendChild(restart);
+    }
+
+    function updateBestScore() {
+        document.getElementById('bestScore').textContent = bestScore;
+    }
+
+    document.getElementById('button1').addEventListener('click', () => checkAnswer(document.getElementById('button1').textContent === document.getElementById('colorDisplay').style.color));
+    document.getElementById('button2').addEventListener('click', () => checkAnswer(document.getElementById('button2').textContent === document.getElementById('colorDisplay').style.color));
+
+    startGame();
+</script>
+
+</body>
+</html>
