@@ -16,49 +16,50 @@
       html {
         height: 100%;
         margin: 0;
-        background-color: #f0f4f8;
+        background: linear-gradient(45deg, #f093fb, #f5576c);
         display: flex;
         justify-content: center;
         align-items: center;
         font-family: 'Poppins', sans-serif;
+        color: #ffffff;
       }
 
       .game-container {
-        display: flex;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         background-color: #ffffff;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         border-radius: 15px;
         padding: 40px;
-        width: 500px;
+        width: 600px;
+        color: #333;
       }
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(4, 100px);
-        grid-template-rows: repeat(4, 100px);
-        gap: 10px;
+        grid-template-columns: repeat(4, 120px);
+        grid-template-rows: repeat(4, 120px);
+        gap: 15px;
         margin-top: 20px;
       }
 
       .grid-item {
-        background-color: #f8f9fa;
         border-radius: 10px;
-        border: 2px solid #3498db;
         text-align: center;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 18px;
+        font-size: 20px;
         font-weight: bold;
+        color: #ffffff;
         cursor: pointer;
-        transition: background-color 0.3s ease;
+        transition: transform 0.2s ease;
       }
 
       .grid-item:hover {
-        background-color: #dff0ea;
+        transform: scale(1.1);
       }
 
       .info-box {
@@ -66,49 +67,138 @@
         justify-content: space-between;
         width: 100%;
         margin-bottom: 20px;
+        font-size: 20px;
       }
 
       .info-box div {
         font-size: 18px;
-        background: #f8f9fa;
-        padding: 10px 15px;
-        border-radius: 10px;
+        background: #f7c2d5;
+        color: #333;
+        padding: 15px;
+        border-radius: 15px;
         text-align: center;
         flex: 1;
-        margin: 0 5px;
+        margin: 0 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
       }
 
       .target-number {
-        font-size: 30px;
+        font-size: 36px;
         color: #e74c3c;
         font-weight: bold;
       }
 
       .message {
         margin-top: 20px;
-        font-size: 20px;
+        font-size: 22px;
         font-weight: bold;
         color: #2c3e50;
       }
 
       button {
-        background-color: #e74c3c;
+        background-color: #ff6347;
         color: white;
         border: none;
-        padding: 10px 20px;
-        font-size: 18px;
-        border-radius: 10px;
+        padding: 15px 30px;
+        font-size: 20px;
+        border-radius: 20px;
         cursor: pointer;
-        transition: background-color 0.3s ease;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
       }
 
       button:hover {
-        background-color: #c0392b;
+        background-color: #ff4500;
+        transform: scale(1.05);
+      }
+
+      .instructions-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border-radius: 15px;
+        padding: 40px;
+        width: 600px;
+        text-align: center;
+        color: #333;
+      }
+
+      .instructions {
+        margin-bottom: 20px;
+      }
+
+      h3 {
+        font-size: 28px;
+        color: #333;
+      }
+
+      p {
+        font-size: 18px;
+        line-height: 1.6;
+        color: #555;
+      }
+
+      /* Styling for the Game Over Message */
+      .game-over {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        font-size: 48px;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        display: none;
+        z-index: 1000;
+      }
+
+      .game-over.show {
+        display: block;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="game-container">
+    <!-- Instructions Container -->
+    <div class="instructions-container">
+      <div class="instructions">
+        <h3>How to Play:</h3>
+        <p>
+          1. A target number will be displayed at the beginning of each
+          round.<br />
+          2. Your task is to find the equations in the grid that equal the
+          target number.<br />
+          3. Each correct equation will increase your score.<br />
+          4. Be careful! Wrong answers will reduce your lives. You have 3
+          lives.<br />
+          5. Click "Start Game" to begin the challenge!
+        </p>
+      </div>
+      <button id="startGameButton">Start Game</button>
+    </div>
+
+    <!-- Game Over Message -->
+    <div id="gameOverMessage" class="game-over">
+      Game Over! <br />
+      Your final score is <span id="finalScore"></span>
+    </div>
+
+    <!-- Game Container -->
+    <div class="game-container" id="gameContainer">
       <div class="info-box">
         <div>Lives: <span id="lives">3</span></div>
         <div class="target-number">Target: <span id="targetNumber"></span></div>
@@ -128,12 +218,29 @@
       const scoreElement = document.getElementById('score');
       const messageElement = document.getElementById('message');
       const restartButton = document.getElementById('restartGame');
+      const startGameButton = document.getElementById('startGameButton');
+      const gameContainer = document.getElementById('gameContainer');
+      const instructionsContainer = document.querySelector(
+        '.instructions-container'
+      );
+      const gameOverMessage = document.getElementById('gameOverMessage');
+      const finalScoreElement = document.getElementById('finalScore');
 
       let targetNumber;
       let lives = 3;
       let score = 0;
       let correctEquationsCount = 0;
       let correctCount = 0;
+
+      // Function to start the game
+      function startGame() {
+        instructionsContainer.style.display = 'none'; // Hide the instructions
+        gameContainer.style.display = 'flex'; // Show the game container
+        resetGrid(); // Start the first round
+      }
+
+      // Add event listener to the Start Game button
+      startGameButton.addEventListener('click', startGame);
 
       // Generates a random target number between 1 and 50
       function generateTargetNumber() {
@@ -196,6 +303,26 @@
         return incorrectEquation;
       }
 
+      // List of colors for grid items
+      const colors = [
+        '#f54291',
+        '#f5a742',
+        '#42f5b3',
+        '#42a7f5',
+        '#9a42f5',
+        '#f54242',
+        '#f5e642',
+        '#8bf542',
+        '#42f554',
+        '#42f5e8',
+        '#f542da',
+        '#f59f42',
+        '#d142f5',
+        '#425af5',
+        '#42f57e',
+        '#f54242',
+      ];
+
       // Populates the grid with correct and incorrect equations
       function populateGrid() {
         grid.innerHTML = '';
@@ -228,10 +355,11 @@
         );
 
         // Display equations in grid cells
-        allEquations.forEach((equation) => {
+        allEquations.forEach((equation, index) => {
           const gridItem = document.createElement('div');
           gridItem.classList.add('grid-item');
           gridItem.textContent = equation;
+          gridItem.style.backgroundColor = colors[index % colors.length]; // Apply random color
           gridItem.addEventListener('click', () =>
             checkAnswer(equation, gridItem)
           );
@@ -276,7 +404,8 @@
 
       // Ends the game and displays the final score
       function endGame() {
-        messageElement.textContent = `Game Over! Your final score is ${score}`;
+        finalScoreElement.textContent = score;
+        gameOverMessage.classList.add('show'); // Show the "Game Over" message
         grid.innerHTML = ''; // Clears the grid
         restartButton.style.display = 'block'; // Shows the restart button
       }
@@ -288,12 +417,10 @@
         livesElement.textContent = lives;
         scoreElement.textContent = score;
         messageElement.textContent = '';
-        restartButton.style.display = 'none';
+        gameOverMessage.classList.remove('show'); // Hide the "Game Over" message
+        restartButton.stayle.display = 'none';
         resetGrid();
       });
-
-      // Initializes the game by setting the target number and populating the grid
-      resetGrid();
     </script>
   </body>
 </html>
